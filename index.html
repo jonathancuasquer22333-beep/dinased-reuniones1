@@ -362,7 +362,7 @@ html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);ove
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:7px;margin-top:7px;flex-shrink:0">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
           <button onclick="calAnterior()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94A3B8;border-radius:4px;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1">&#8249;</button>
-          <div id="cal-titulo" style="font-size:12px;font-weight:600;color:#3B82F6;font-family:var(--fm)">Cargando...</div>
+          <div id="cal-titulo" style="font-size:11px;font-weight:600;color:#3B82F6;font-family:var(--fm)">Cargando...</div>
           <button onclick="calSiguiente()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94A3B8;border-radius:4px;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1">&#8250;</button>
         </div>
         <div class="cal-g" id="cal-grid">
@@ -706,124 +706,57 @@ function mostrarPreview(d,id){
 
 _msg('chat2','bot','Hola, Subteniente. Dictame una reunión y la agendo automáticamente.');
 
-// ── CALENDARIO INTERACTIVO ────────────────────────────────────
-let reunionesCache = [];
-let calMes, calAnio;
-const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-const TIPO_COLOR = {
-  '🚨 URGENTE':'#EF4444','Urgente':'#EF4444',
-  '🔵 Operativa':'#3B82F6','Operativa':'#3B82F6',
-  '🟡 Capacitación':'#F59E0B','Capacitación':'#F59E0B',
-  '🟣 Diligencia':'#8B5CF6','Diligencia':'#8B5CF6',
-  '🟢 Coordinación':'#14B8A6','Coordinación':'#14B8A6',
-  '🟢 Administrativa':'#10B981','Administrativa':'#10B981',
-};
-
-function cargarReuniones() {
-  const cbName = 'dinasedCal_' + Date.now();
-  const script = document.createElement('script');
-  window[cbName] = function(j) {
-    delete window[cbName];
-    try { document.body.removeChild(script); } catch(e){}
-    if (j && j.ok && j.reuniones) reunionesCache = j.reuniones;
-    renderCalendario();
-  };
-  script.src = WEBAPP + '?accion=reuniones&callback=' + cbName;
-  script.onerror = function() {
-    delete window[cbName];
-    try { document.body.removeChild(script); } catch(e){}
-    renderCalendario();
-  };
-  document.body.appendChild(script);
+// ── CALENDARIO INTERACTIVO ─────────────────────────
+let reunionesCache=[],calMes,calAnio;
+const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+const TC={'🚨 URGENTE':'#EF4444','Urgente':'#EF4444','🔵 Operativa':'#3B82F6','Operativa':'#3B82F6','🟡 Capacitación':'#F59E0B','Capacitación':'#F59E0B','🟣 Diligencia':'#8B5CF6','Diligencia':'#8B5CF6','🟢 Coordinación':'#14B8A6','Coordinación':'#14B8A6','🟢 Administrativa':'#10B981','Administrativa':'#10B981'};
+function cargarReuniones(){
+  const cb='cb_'+Date.now(),s=document.createElement('script');
+  window[cb]=function(j){delete window[cb];try{document.body.removeChild(s);}catch(e){}
+    if(j&&j.ok&&j.reuniones)reunionesCache=j.reuniones;renderCalendario();};
+  s.onerror=function(){delete window[cb];try{document.body.removeChild(s);}catch(e){}renderCalendario();};
+  s.src=WEBAPP+'?accion=reuniones&callback='+cb;document.body.appendChild(s);
 }
-
-function renderCalendario() {
-  const hoy = new Date();
-  if (calMes === undefined) calMes = hoy.getMonth();
-  if (calAnio === undefined) calAnio = hoy.getFullYear();
-  const tit = document.getElementById('cal-titulo');
-  if (tit) tit.textContent = MESES[calMes] + ' ' + calAnio;
-  const grid = document.getElementById('cal-grid');
-  if (!grid) return;
-  const hdrs = [...grid.querySelectorAll('.cal-dh')];
-  grid.innerHTML = '';
-  hdrs.forEach(h => grid.appendChild(h));
-  const primerDia = new Date(calAnio, calMes, 1).getDay();
-  const diasMes   = new Date(calAnio, calMes + 1, 0).getDate();
-  const diasAnt   = new Date(calAnio, calMes, 0).getDate();
-  const offset    = primerDia === 0 ? 6 : primerDia - 1;
-  for (let i = offset - 1; i >= 0; i--) {
-    const d = document.createElement('div');
-    d.className = 'cal-d otro';
-    d.innerHTML = `<div class="cal-num">${diasAnt - i}</div>`;
+function renderCalendario(){
+  const hoy=new Date();
+  if(calMes===undefined)calMes=hoy.getMonth();
+  if(calAnio===undefined)calAnio=hoy.getFullYear();
+  const tit=document.getElementById('cal-titulo');
+  if(tit)tit.textContent=MESES[calMes]+' '+calAnio;
+  const grid=document.getElementById('cal-grid');if(!grid)return;
+  const hdrs=[...grid.querySelectorAll('.cal-dh')];
+  grid.innerHTML='';hdrs.forEach(h=>grid.appendChild(h));
+  const p1=new Date(calAnio,calMes,1).getDay(),dm=new Date(calAnio,calMes+1,0).getDate();
+  const da=new Date(calAnio,calMes,0).getDate(),off=p1===0?6:p1-1;
+  for(let i=off-1;i>=0;i--){const d=document.createElement('div');d.className='cal-d otro';d.innerHTML=`<div class="cal-num">${da-i}</div>`;grid.appendChild(d);}
+  for(let dia=1;dia<=dm;dia++){
+    const f=`${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const rd=reunionesCache.filter(r=>{const v=r.fecha?.toString().trim();if(!v)return false;
+      if(v.includes('-'))return v===f;
+      if(v.includes('/')){const p=v.split('/');return p.length===3&&`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`===f;}
+      return false;});
+    const esHoy=hoy.getDate()===dia&&hoy.getMonth()===calMes&&hoy.getFullYear()===calAnio;
+    const d=document.createElement('div');d.className='cal-d'+(esHoy?' hoy':'');
+    if(rd.length>0)d.style.cursor='pointer';
+    const tu=[...new Set(rd.map(r=>r.tipo))].slice(0,3);
+    d.innerHTML=`<div class="cal-num">${dia}</div>`+tu.map(t=>`<div class="cal-dot" style="background:${TC[t]||'#3B82F6'}"></div>`).join('');
+    if(rd.length>0)d.onclick=()=>mostrarDia(dia,rd);
     grid.appendChild(d);
   }
-  for (let dia = 1; dia <= diasMes; dia++) {
-    const fecha = `${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-    const reuDia = reunionesCache.filter(r => {
-      const f = r.fecha?.toString().trim();
-      if (!f) return false;
-      if (f.includes('-')) return f === fecha;
-      if (f.includes('/')) {
-        const p = f.split('/');
-        return p.length===3 && `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}` === fecha;
-      }
-      return false;
-    });
-    const esHoy = hoy.getDate()===dia && hoy.getMonth()===calMes && hoy.getFullYear()===calAnio;
-    const d = document.createElement('div');
-    d.className = 'cal-d' + (esHoy ? ' hoy' : '');
-    if (reuDia.length > 0) d.style.cursor = 'pointer';
-    const tiposUnicos = [...new Set(reuDia.map(r => r.tipo))].slice(0, 3);
-    let dots = tiposUnicos.map(t => `<div class="cal-dot" style="background:${TIPO_COLOR[t]||'#3B82F6'}"></div>`).join('');
-    d.innerHTML = `<div class="cal-num">${dia}</div>${dots}`;
-    if (reuDia.length > 0) d.onclick = () => mostrarDetalleDia(dia, reuDia);
-    grid.appendChild(d);
-  }
-  const total = offset + diasMes;
-  const rest  = total % 7 === 0 ? 0 : 7 - (total % 7);
-  for (let i = 1; i <= rest; i++) {
-    const d = document.createElement('div');
-    d.className = 'cal-d otro';
-    d.innerHTML = `<div class="cal-num">${i}</div>`;
-    grid.appendChild(d);
-  }
+  const tot=off+dm,rest=tot%7===0?0:7-(tot%7);
+  for(let i=1;i<=rest;i++){const d=document.createElement('div');d.className='cal-d otro';d.innerHTML=`<div class="cal-num">${i}</div>`;grid.appendChild(d);}
 }
-
-function mostrarDetalleDia(dia, reuniones) {
-  const det  = document.getElementById('cal-detalle');
-  const tit  = document.getElementById('cal-detalle-titulo');
-  const list = document.getElementById('cal-detalle-lista');
-  if (!det || !tit || !list) return;
-  tit.textContent = `${dia} ${MESES[calMes]} · ${reuniones.length} reunión${reuniones.length>1?'es':''}`;
-  list.innerHTML = reuniones.map(r => {
-    const col = TIPO_COLOR[r.tipo] || '#3B82F6';
-    return `<div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <div style="width:6px;height:6px;border-radius:50%;background:${col};margin-top:4px;flex-shrink:0"></div>
-      <div style="min-width:0;flex:1">
-        <div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.titulo}</div>
-        <div style="font-size:10px;color:#64748B;font-family:var(--fm)">${r.hora} · ${r.lugar} · ${r.encargado||'Sin encargado'}</div>
-      </div>
-    </div>`;
-  }).join('');
-  det.style.display = 'block';
+function mostrarDia(dia,rd){
+  const det=document.getElementById('cal-detalle'),tit=document.getElementById('cal-detalle-titulo'),lst=document.getElementById('cal-detalle-lista');
+  if(!det||!tit||!lst)return;
+  tit.textContent=`${dia} ${MESES[calMes]} · ${rd.length} reunión${rd.length>1?'es':''}`;
+  lst.innerHTML=rd.map(r=>{const c=TC[r.tipo]||'#3B82F6';return`<div style="display:flex;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div style="width:6px;height:6px;border-radius:50%;background:${c};margin-top:4px;flex-shrink:0"></div><div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.titulo}</div><div style="font-size:10px;color:#64748B;font-family:var(--fm)">${r.hora} · ${r.lugar}</div></div></div>`;}).join('');
+  det.style.display='block';
 }
-
-function calAnterior() {
-  if (calMes===0){calMes=11;calAnio--;}else calMes--;
-  const det=document.getElementById('cal-detalle');
-  if(det)det.style.display='none';
-  renderCalendario();
-}
-function calSiguiente() {
-  if (calMes===11){calMes=0;calAnio++;}else calMes++;
-  const det=document.getElementById('cal-detalle');
-  if(det)det.style.display='none';
-  renderCalendario();
-}
-
+function calAnterior(){if(calMes===0){calMes=11;calAnio--;}else calMes--;const d=document.getElementById('cal-detalle');if(d)d.style.display='none';renderCalendario();}
+function calSiguiente(){if(calMes===11){calMes=0;calAnio++;}else calMes++;const d=document.getElementById('cal-detalle');if(d)d.style.display='none';renderCalendario();}
 cargarReuniones();
-setInterval(cargarReuniones, 5 * 60 * 1000);
+setInterval(cargarReuniones,5*60*1000);
 
 </script>
 </body>
