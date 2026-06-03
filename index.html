@@ -234,17 +234,13 @@ html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);ove
   .ri-badge{font-size:9px;flex-shrink:0}
 
   /* Burbujas y tarjeta IA */
-  .burbuja{max-width:100% !important;font-size:12px;width:auto;box-sizing:border-box}
-  .cr{width:100%;overflow:hidden;box-sizing:border-box}
+  .burbuja{max-width:100% !important;font-size:12px;width:auto}
+  .cr{width:100%;overflow:hidden}
   .cr-hdr{flex-wrap:wrap;gap:4px}
   .cr-hdr span:first-of-type{font-size:11px;word-break:break-word;flex:1;min-width:0}
-  .campo{flex-wrap:nowrap;width:100%}
+  .campo{flex-wrap:nowrap}
   .campo-lbl{min-width:65px;font-size:10px;flex-shrink:0}
-  .campo-val{font-size:11px;word-break:break-word;min-width:0;overflow:hidden;flex:1}
-  /* Fix columnas IA */
-  #tab-ia .card{width:100%;overflow:hidden;box-sizing:border-box}
-  #preview-sheet{width:100%;overflow:hidden;box-sizing:border-box;word-break:break-word}
-  #preview-sheet > div{width:100% !important;max-width:100% !important}
+  .campo-val{font-size:11px;word-break:break-word;min-width:0;overflow:hidden}
 
   /* Chat */
   .chat-area{min-height:140px;max-height:260px;overflow-y:auto;width:100%}
@@ -360,21 +356,16 @@ html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);ove
         <div class="ai"><div class="ai-icon ai-tg"><i class="ti ti-brand-telegram"></i></div><div><div class="at">Telegram · Prueba</div><div class="as">✅ OK · 12:18</div></div></div>
       </div>
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:7px;margin-top:7px;flex-shrink:0">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-          <button onclick="calAnterior()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94A3B8;border-radius:4px;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1">&#8249;</button>
-          <div id="cal-titulo" style="font-size:11px;font-weight:600;color:#3B82F6;font-family:var(--fm)">Cargando...</div>
-          <button onclick="calSiguiente()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94A3B8;border-radius:4px;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1">&#8250;</button>
-        </div>
-        <div class="cal-g" id="cal-grid">
+        <div style="font-size:15px;font-weight:600;color:#3B82F6;margin-bottom:5px;font-family:var(--fm)">JUNIO 2026</div>
+        <div class="cal-g">
           <div class="cal-dh">L</div><div class="cal-dh">M</div><div class="cal-dh">X</div><div class="cal-dh">J</div><div class="cal-dh">V</div><div class="cal-dh">S</div><div class="cal-dh">D</div>
+          <div class="cal-d otro"><div class="cal-num">26</div></div><div class="cal-d otro"><div class="cal-num">27</div></div><div class="cal-d otro"><div class="cal-num">28</div></div><div class="cal-d otro"><div class="cal-num">29</div></div><div class="cal-d otro"><div class="cal-num">30</div></div><div class="cal-d otro"><div class="cal-num">31</div></div><div class="cal-d"><div class="cal-num">1</div></div>
+          <div class="cal-d hoy"><div class="cal-num">2</div></div><div class="cal-d"><div class="cal-num">3</div><div class="cal-dot" style="background:#10B981"></div></div><div class="cal-d"><div class="cal-num">4</div><div class="cal-dot" style="background:#3B82F6"></div></div><div class="cal-d"><div class="cal-num">5</div><div class="cal-dot" style="background:#8B5CF6"></div></div><div class="cal-d"><div class="cal-num">6</div></div><div class="cal-d"><div class="cal-num">7</div></div>
+          <div class="cal-d"><div class="cal-num">8</div><div class="cal-dot" style="background:#F59E0B"></div></div><div class="cal-d"><div class="cal-num">9</div><div class="cal-dot" style="background:#14B8A6"></div></div><div class="cal-d"><div class="cal-num">10</div></div><div class="cal-d"><div class="cal-num">11</div></div><div class="cal-d"><div class="cal-num">12</div></div><div class="cal-d"><div class="cal-num">13</div></div><div class="cal-d"><div class="cal-num">14</div></div>
+          <div class="cal-d"><div class="cal-num">15</div><div class="cal-dot" style="background:#10B981"></div></div><div class="cal-d"><div class="cal-num">16</div></div><div class="cal-d"><div class="cal-num">17</div></div><div class="cal-d"><div class="cal-num">18</div><div class="cal-dot" style="background:#3B82F6"></div></div><div class="cal-d"><div class="cal-num">19</div></div><div class="cal-d"><div class="cal-num">20</div></div><div class="cal-d"><div class="cal-num">21</div></div>
+          <div class="cal-d"><div class="cal-num">22</div><div class="cal-dot" style="background:#EF4444"></div></div><div class="cal-d"><div class="cal-num">23</div></div><div class="cal-d"><div class="cal-num">24</div></div><div class="cal-d"><div class="cal-num">25</div><div class="cal-dot" style="background:#8B5CF6"></div></div><div class="cal-d"><div class="cal-num">26</div></div><div class="cal-d"><div class="cal-num">27</div></div><div class="cal-d"><div class="cal-num">28</div></div>
+          <div class="cal-d"><div class="cal-num">29</div><div class="cal-dot" style="background:#10B981"></div></div><div class="cal-d"><div class="cal-num">30</div></div>
         </div>
-        <div id="cal-detalle" style="display:none;margin-top:7px;background:rgba(0,0,0,.2);border-radius:6px;padding:8px;border:1px solid rgba(255,255,255,.08)">
-          <div id="cal-detalle-titulo" style="font-size:11px;font-weight:600;color:#3B82F6;font-family:var(--fm);margin-bottom:5px"></div>
-          <div id="cal-detalle-lista"></div>
-        </div>
-      </div>
-    </div>
-  </div>
       </div>
     </div>
 
@@ -481,7 +472,7 @@ html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);ove
 <div class="toast" id="toast"><i class="ti ti-circle-check" style="font-size:16px"></i><span id="toast-txt"></span></div>
 
 <script>
-const WEBAPP='https://script.google.com/macros/s/AKfycbyY1U5dNQGGp6hEbZ5GOrtAWQjY_gjbPiFBp5Kc4-HaBpntCwsVkkimK5iio7gXluK7/exec';
+const WEBAPP='https://script.google.com/macros/s/AKfycbycm9GrEhrk38brxRqAQl5re7NEiH88QuJAAmT0HdmDZZv3oPui1ALoqQZp4BPBilgXKA/exec';
 let contextoAprendizaje=[];
 let grabando=false,recognition=null,datosActuales=null;
 
@@ -705,59 +696,6 @@ function mostrarPreview(d,id){
 }
 
 _msg('chat2','bot','Hola, Subteniente. Dictame una reunión y la agendo automáticamente.');
-
-// ── CALENDARIO INTERACTIVO ─────────────────────────
-let reunionesCache=[],calMes,calAnio;
-const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-const TC={'🚨 URGENTE':'#EF4444','Urgente':'#EF4444','🔵 Operativa':'#3B82F6','Operativa':'#3B82F6','🟡 Capacitación':'#F59E0B','Capacitación':'#F59E0B','🟣 Diligencia':'#8B5CF6','Diligencia':'#8B5CF6','🟢 Coordinación':'#14B8A6','Coordinación':'#14B8A6','🟢 Administrativa':'#10B981','Administrativa':'#10B981'};
-function cargarReuniones(){
-  const cb='cb_'+Date.now(),s=document.createElement('script');
-  window[cb]=function(j){delete window[cb];try{document.body.removeChild(s);}catch(e){}
-    if(j&&j.ok&&j.reuniones)reunionesCache=j.reuniones;renderCalendario();};
-  s.onerror=function(){delete window[cb];try{document.body.removeChild(s);}catch(e){}renderCalendario();};
-  s.src=WEBAPP+'?accion=reuniones&callback='+cb;document.body.appendChild(s);
-}
-function renderCalendario(){
-  const hoy=new Date();
-  if(calMes===undefined)calMes=hoy.getMonth();
-  if(calAnio===undefined)calAnio=hoy.getFullYear();
-  const tit=document.getElementById('cal-titulo');
-  if(tit)tit.textContent=MESES[calMes]+' '+calAnio;
-  const grid=document.getElementById('cal-grid');if(!grid)return;
-  const hdrs=[...grid.querySelectorAll('.cal-dh')];
-  grid.innerHTML='';hdrs.forEach(h=>grid.appendChild(h));
-  const p1=new Date(calAnio,calMes,1).getDay(),dm=new Date(calAnio,calMes+1,0).getDate();
-  const da=new Date(calAnio,calMes,0).getDate(),off=p1===0?6:p1-1;
-  for(let i=off-1;i>=0;i--){const d=document.createElement('div');d.className='cal-d otro';d.innerHTML=`<div class="cal-num">${da-i}</div>`;grid.appendChild(d);}
-  for(let dia=1;dia<=dm;dia++){
-    const f=`${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-    const rd=reunionesCache.filter(r=>{const v=r.fecha?.toString().trim();if(!v)return false;
-      if(v.includes('-'))return v===f;
-      if(v.includes('/')){const p=v.split('/');return p.length===3&&`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`===f;}
-      return false;});
-    const esHoy=hoy.getDate()===dia&&hoy.getMonth()===calMes&&hoy.getFullYear()===calAnio;
-    const d=document.createElement('div');d.className='cal-d'+(esHoy?' hoy':'');
-    if(rd.length>0)d.style.cursor='pointer';
-    const tu=[...new Set(rd.map(r=>r.tipo))].slice(0,3);
-    d.innerHTML=`<div class="cal-num">${dia}</div>`+tu.map(t=>`<div class="cal-dot" style="background:${TC[t]||'#3B82F6'}"></div>`).join('');
-    if(rd.length>0)d.onclick=()=>mostrarDia(dia,rd);
-    grid.appendChild(d);
-  }
-  const tot=off+dm,rest=tot%7===0?0:7-(tot%7);
-  for(let i=1;i<=rest;i++){const d=document.createElement('div');d.className='cal-d otro';d.innerHTML=`<div class="cal-num">${i}</div>`;grid.appendChild(d);}
-}
-function mostrarDia(dia,rd){
-  const det=document.getElementById('cal-detalle'),tit=document.getElementById('cal-detalle-titulo'),lst=document.getElementById('cal-detalle-lista');
-  if(!det||!tit||!lst)return;
-  tit.textContent=`${dia} ${MESES[calMes]} · ${rd.length} reunión${rd.length>1?'es':''}`;
-  lst.innerHTML=rd.map(r=>{const c=TC[r.tipo]||'#3B82F6';return`<div style="display:flex;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div style="width:6px;height:6px;border-radius:50%;background:${c};margin-top:4px;flex-shrink:0"></div><div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.titulo}</div><div style="font-size:10px;color:#64748B;font-family:var(--fm)">${r.hora} · ${r.lugar}</div></div></div>`;}).join('');
-  det.style.display='block';
-}
-function calAnterior(){if(calMes===0){calMes=11;calAnio--;}else calMes--;const d=document.getElementById('cal-detalle');if(d)d.style.display='none';renderCalendario();}
-function calSiguiente(){if(calMes===11){calMes=0;calAnio++;}else calMes++;const d=document.getElementById('cal-detalle');if(d)d.style.display='none';renderCalendario();}
-cargarReuniones();
-setInterval(cargarReuniones,5*60*1000);
-
 </script>
 </body>
 </html>
