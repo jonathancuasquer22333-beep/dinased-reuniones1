@@ -121,6 +121,7 @@ html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);ove
 .cal-d{min-height:20px;border-radius:3px;padding:1px 2px;cursor:pointer;border:1px solid transparent}
 .cal-d:hover{background:rgba(255,255,255,.06)}
 .cal-d.hoy{background:rgba(37,99,235,.2);border-color:rgba(59,130,246,.4)}
+.cal-d.seleccionado{background:rgba(252,211,77,.15);border-color:rgba(252,211,77,.5)}
 .cal-d.otro{opacity:.2}
 .cal-num{font-size:11px;text-align:right}
 .cal-d.hoy .cal-num{color:#3B82F6;font-weight:700}
@@ -354,6 +355,14 @@ html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);ove
         <div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center"><i class="ti ti-loader"></i> Cargando...</div>
       </div>
     </div>
+    <div class="card admin-only-card" id="card-carga-trabajo">
+      <div class="card-hdr">
+        <div class="card-ttl"><i class="ti ti-chart-bar"></i>Carga de trabajo · este mes</div>
+      </div>
+      <div class="card-body" id="lista-carga">
+        <div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center"><i class="ti ti-loader"></i> Cargando...</div>
+      </div>
+    </div>
     <div class="card">
       <div class="card-hdr"><div class="card-ttl"><i class="ti ti-bell-ringing"></i>Alertas recientes</div></div>
       <div class="card-body">
@@ -392,6 +401,10 @@ html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);ove
     <div style="font-family:var(--fd);font-size:20px;letter-spacing:2px">AGENDA</div>
     <button class="btn-new admin-only" onclick="abrirModal()"><i class="ti ti-plus" style="font-size:12px"></i>Agendar</button>
   </div>
+  <div style="margin:8px 0;flex-shrink:0">
+    <input type="text" id="buscar-agenda" placeholder="Buscar por título, encargado, lugar o fecha (yyyy-mm-dd)..." oninput="renderAgenda()" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:8px 10px;color:#E2E8F0;font-size:12px;font-family:var(--fm)"/>
+  </div>
+  <div id="agenda-filtro-activo" style="flex-shrink:0"></div>
   <div class="card" style="flex:1">
     <div class="card-body" id="lista-agenda">
       <div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center"><i class="ti ti-loader" style="font-size:18px"></i><br>Cargando...</div>
@@ -414,6 +427,9 @@ html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);ove
   <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
     <div style="font-family:var(--fd);font-size:20px;letter-spacing:2px">ACTAS</div>
     <div style="font-size:11px;color:#64748B;font-family:var(--fm)" id="actas-sub">Registro de reuniones finalizadas</div>
+  </div>
+  <div style="margin:8px 0;flex-shrink:0">
+    <input type="text" id="buscar-actas" placeholder="Buscar por título, asistente o fecha (yyyy-mm-dd)..." oninput="renderActas()" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:8px 10px;color:#E2E8F0;font-size:12px;font-family:var(--fm)"/>
   </div>
   <div class="card" style="flex:1"><div class="card-body" id="lista-actas">
     <div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center"><i class="ti ti-file-off" style="font-size:18px"></i><br>Sin actas aún. Finaliza una reunión para registrar.</div>
@@ -514,6 +530,7 @@ const USUARIOS_DEFAULT=[
 
 // ── ESTADO ────────────────────────────────────────────────────
 let usuarios=[], reuniones=[], recurrentes=[], actas=[], memoriaAsistentes={};
+let fechaFiltroAgenda=null;
 let usuarioActual=null;
 let pinActual='';
 let grabando=false, recognition=null, datosActuales=null;
@@ -556,6 +573,26 @@ async function cargarUsuariosDesdeSheet(){
     };
     const s=document.createElement('script');
     s.src=WEBAPP_READ+'?accion=usuarios&callback='+cb+'&nocache='+Date.now();
+    s.onerror=function(){ clearTimeout(timeout); delete window[cb]; resolve(false); };
+    document.head.appendChild(s);
+  });
+}
+
+// Carga las actas reales desde el Sheet (fuente central, igual que usuarios y reuniones)
+async function cargarActasDesdeSheet(){
+  return new Promise((resolve)=>{
+    const cb='actCB'+Date.now();
+    const timeout=setTimeout(()=>{ if(window[cb]){ delete window[cb]; resolve(false); } }, 8000);
+    window[cb]=function(data){
+      clearTimeout(timeout);
+      delete window[cb];
+      if(data && data.ok && data.actas){
+        actas=data.actas;
+      }
+      resolve(true);
+    };
+    const s=document.createElement('script');
+    s.src=WEBAPP_READ+'?accion=actas&callback='+cb+'&nocache='+Date.now();
     s.onerror=function(){ clearTimeout(timeout); delete window[cb]; resolve(false); };
     document.head.appendChild(s);
   });
@@ -631,7 +668,7 @@ function verificarPIN(){
   }
 }
 
-function entrarAlSistema(){
+async function entrarAlSistema(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').classList.add('visible');
   aplicarRol();
@@ -640,6 +677,8 @@ function entrarAlSistema(){
   renderCalendario();
   renderUsuarios();
   _msg('chat2','bot','Hola, '+usuarioActual.nombre+'. Dictame una reunión y la agendo.');
+  await cargarActasDesdeSheet();
+  renderActas();
 }
 
 async function cerrarSesion(){
@@ -809,10 +848,43 @@ function renderFallback(){
 function renderAgenda(){
   const el=document.getElementById('lista-agenda');
   const hoy=new Date(); hoy.setHours(0,0,0,0);
-  let lista=reuniones.filter(r=>{ const f=parseFecha(r.fecha); return f && f.getTime()>=hoy.getTime(); })
-    .filter(r=>usuarioActual && usuarioActual.rol==='admin' ? true : esDeUsuario(r))
-    .sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha));
-  if(!lista.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center">Sin reuniones próximas</div>'; return; }
+  const busqueda=(document.getElementById('buscar-agenda')?.value||'').toLowerCase().trim();
+  let lista=reuniones
+    .filter(r=>usuarioActual && usuarioActual.rol==='admin' ? true : esDeUsuario(r));
+
+  if(fechaFiltroAgenda){
+    // Si hay un día seleccionado en el calendario, mostrar SOLO ese día (sin importar si es pasado o futuro)
+    lista=lista.filter(r=>r.fecha===fechaFiltroAgenda);
+  } else {
+    // Sin filtro de fecha: comportamiento normal (solo próximas)
+    lista=lista.filter(r=>{ const f=parseFecha(r.fecha); return f && f.getTime()>=hoy.getTime(); });
+  }
+
+  if(busqueda){
+    lista=lista.filter(r=>
+      (r.titulo||'').toLowerCase().includes(busqueda) ||
+      (r.encargado||'').toLowerCase().includes(busqueda) ||
+      (r.lugar||'').toLowerCase().includes(busqueda) ||
+      (r.fecha||'').includes(busqueda)
+    );
+  }
+
+  lista.sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha));
+
+  // Mostrar aviso de filtro activo
+  const filtroEl=document.getElementById('agenda-filtro-activo');
+  if(filtroEl){
+    if(fechaFiltroAgenda){
+      filtroEl.innerHTML=`<div style="background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.3);border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:12px;color:#93C5FD;display:flex;justify-content:space-between;align-items:center">
+        <span><i class="ti ti-filter"></i> Mostrando solo: ${formatLarga(fechaFiltroAgenda)}</span>
+        <span style="cursor:pointer;text-decoration:underline" onclick="fechaFiltroAgenda=null;renderCalendario();renderAgenda();">Quitar filtro</span>
+      </div>`;
+    } else {
+      filtroEl.innerHTML='';
+    }
+  }
+
+  if(!lista.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center">Sin reuniones para mostrar</div>'; return; }
   const grupos={};
   lista.forEach(r=>{ const k=r.fecha; if(!grupos[k]) grupos[k]=[]; grupos[k].push(r); });
   const now=new Date(), man=new Date(now.getTime()+86400000);
@@ -845,9 +917,18 @@ function renderCalendario(){
   for(let d=1;d<=dias;d++){
     const f=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esH=d===hoy.getDate(); const col=fechas[f];
-    h+=`<div class="cal-d${esH?' hoy':''}"><div class="cal-num">${d}</div>${col?`<div class="cal-dot" style="background:${col}"></div>`:''}</div>`;
+    const esSel=f===fechaFiltroAgenda;
+    h+=`<div class="cal-d${esH?' hoy':''}${esSel?' seleccionado':''}" onclick="filtrarAgendaPorFecha('${f}')"><div class="cal-num">${d}</div>${col?`<div class="cal-dot" style="background:${col}"></div>`:''}</div>`;
   }
   document.getElementById('cal-grid').innerHTML=h;
+}
+
+// Filtra la Agenda para mostrar solo las reuniones de la fecha clickeada en el calendario
+function filtrarAgendaPorFecha(fecha){
+  fechaFiltroAgenda = (fechaFiltroAgenda===fecha) ? null : fecha; // toggle: clic de nuevo quita el filtro
+  renderCalendario();
+  setTab('agenda');
+  renderAgenda();
 }
 
 function actualizarStats(){
@@ -862,6 +943,57 @@ function actualizarStats(){
   document.getElementById('st-urg').textContent=urg>0?urg+' urgentes':'';
   document.getElementById('st-actas').textContent=actas.length;
   document.getElementById('st-rec').textContent=recurrentes.filter(r=>r.activo).length;
+  if(esAdmin) renderCargaTrabajo();
+}
+
+// ── CARGA DE TRABAJO (solo Admin) — cuenta reuniones del mes por persona ──
+function renderCargaTrabajo(){
+  const el=document.getElementById('lista-carga');
+  if(!el) return;
+  const mesActual=new Date().getMonth();
+  const anioActual=new Date().getFullYear();
+
+  // Reuniones del mes actual, sin contar finalizadas como "carga futura" pero sí contarlas en el total
+  const reunionesDelMes=reuniones.filter(r=>{
+    const f=parseFecha(r.fecha);
+    return f && f.getMonth()===mesActual && f.getFullYear()===anioActual;
+  });
+
+  // Contar por persona (un encargado puede tener varias personas separadas por coma)
+  const conteo={};
+  reunionesDelMes.forEach(r=>{
+    const encargados=(r.encargado||'').split(',').map(e=>e.trim()).filter(Boolean);
+    encargados.forEach(enc=>{
+      if(!conteo[enc]) conteo[enc]={total:0, finalizadas:0, pendientes:0};
+      conteo[enc].total++;
+      if(r.estado==='Finalizada') conteo[enc].finalizadas++; else conteo[enc].pendientes++;
+    });
+  });
+
+  const entradas=Object.entries(conteo).sort((a,b)=>b[1].total-a[1].total);
+
+  if(entradas.length===0){
+    el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center">Sin reuniones asignadas este mes</div>';
+    return;
+  }
+
+  const maxCarga=entradas[0][1].total;
+
+  el.innerHTML=entradas.map(([nombre,datos])=>{
+    const pct=maxCarga>0?Math.round((datos.total/maxCarga)*100):0;
+    let nivel='#3B82F6', etiqueta=''; // normal
+    if(datos.total>=6){ nivel='#EF4444'; etiqueta=' ⚠️ sobrecargado'; }
+    else if(datos.total<=1){ nivel='#22C55E'; etiqueta=' · disponible'; }
+    return `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--fm);margin-bottom:3px">
+        <span style="color:#E2E8F0">${nombre}</span>
+        <span style="color:${nivel}">${datos.total} reunion${datos.total!==1?'es':''}${etiqueta}</span>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:4px;height:6px;overflow:hidden">
+        <div style="background:${nivel};height:100%;width:${pct}%;border-radius:4px"></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── MODAL NUEVA REUNIÓN (solo admin) ─────────────────────────
@@ -1091,7 +1223,7 @@ function abrirModalFin(id,titulo,fecha){
   </div>`;
 }
 
-function finalizarReunion(id,titulo,fecha){
+async function finalizarReunion(id,titulo,fecha){
   const asist=document.getElementById('fin-asist').value;
   const temas=document.getElementById('fin-temas').value;
   const acuerdos=document.getElementById('fin-acuerdos').value;
@@ -1108,7 +1240,17 @@ function finalizarReunion(id,titulo,fecha){
   const r=reuniones.find(r=>r.id===id); if(r) r.estado='Finalizada';
   cerrarModal();
   renderProximas(); renderCalendario(); actualizarStats();
-  toast('✅ Acta registrada');
+  toast('Guardando acta...');
+  // Persistir el estado "Finalizada" en el Sheet para que no se pierda al recargar
+  try{
+    await fetch(WEBAPP,{
+      method:'POST',
+      body:JSON.stringify({ accionEspecial:'finalizarReunion', reunionId:id, acta:acta })
+    });
+    toast('✅ Acta registrada y sincronizada');
+  }catch(e){
+    toast('⚠️ Acta guardada localmente, pero no se sincronizó con el Sheet',false);
+  }
   if(proxFecha){
     setTimeout(()=>{
       if(confirm(`¿Agendar la próxima reunión de "${titulo}" para el ${proxFecha}?\n\nSe sugerirá automáticamente el mismo asistente.`)){
@@ -1142,11 +1284,22 @@ function abrirModalConHistorial(titulo,fecha,asistentes){
 function renderActas(){
   const el=document.getElementById('lista-actas');
   const esAdmin=usuarioActual?.rol==='admin';
-  const lista=esAdmin?actas:actas.filter(a=>{
+  let lista=esAdmin?actas:actas.filter(a=>{
     const nom=((usuarioActual.grado?usuarioActual.grado+' ':'')+usuarioActual.nombre).toLowerCase();
     return (a.asistentes||'').toLowerCase().includes(nom.split(' ').pop());
   });
-  if(!lista.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center"><i class="ti ti-file-off" style="font-size:18px"></i><br>Sin actas aún.</div>'; return; }
+
+  const busqueda=(document.getElementById('buscar-actas')?.value||'').toLowerCase().trim();
+  if(busqueda){
+    lista=lista.filter(a=>
+      (a.titulo||'').toLowerCase().includes(busqueda) ||
+      (a.asistentes||'').toLowerCase().includes(busqueda) ||
+      (a.temas||'').toLowerCase().includes(busqueda) ||
+      (a.fecha||'').includes(busqueda)
+    );
+  }
+
+  if(!lista.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center"><i class="ti ti-file-off" style="font-size:18px"></i><br>Sin actas que coincidan.</div>'; return; }
   el.innerHTML=lista.map(a=>`
     <div class="acta-item">
       <div class="acta-hdr"><i class="ti ti-file-check"></i><div class="acta-tit">${a.titulo}</div><div class="acta-fecha">${formatCorta(a.fecha)}</div></div>
