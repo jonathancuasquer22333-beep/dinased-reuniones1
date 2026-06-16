@@ -947,11 +947,57 @@ function verificarConflictos(){
 }
 
 function chkMemoria(titulo){
-  const key=normTema(titulo); const mem=memoriaAsistentes[key];
   const el=document.getElementById('sugg-asist'); if(!el) return;
-  if(mem && mem.length>0 && titulo.length>5){
-    el.innerHTML=`<div class="asist-sugg"><i class="ti ti-star"></i><div><div style="font-weight:600;margin-bottom:2px">Sugerido por historial:</div><div>${mem.join(', ')}</div><div style="margin-top:3px;color:#94A3B8;font-size:11px">La última vez asistió: <span style="cursor:pointer;color:#FCD34D;text-decoration:underline" onclick="document.getElementById('m-encargado').value='${mem[0]}'">${mem[0]}</span></div></div></div>`;
-  } else el.innerHTML='';
+  if(titulo.length<5){ el.innerHTML=''; return; }
+
+  const palabrasTitulo=normTema(titulo).split(' ').filter(p=>p.length>3);
+  let mejorCoincidencia=null, mejorPuntaje=0, mejorTituloOriginal='';
+
+  // Buscar en el historial de memoria por similitud de palabras clave, no coincidencia exacta
+  Object.keys(memoriaAsistentes).forEach(key=>{
+    const palabrasKey=key.split(' ').filter(p=>p.length>3);
+    let puntaje=0;
+    palabrasTitulo.forEach(p=>{ if(palabrasKey.includes(p)) puntaje++; });
+    if(puntaje>mejorPuntaje){
+      mejorPuntaje=puntaje;
+      mejorCoincidencia=memoriaAsistentes[key];
+    }
+  });
+
+  // También buscar directamente en reuniones pasadas con temas similares (encargados que ya trataron este tipo de caso)
+  if(!mejorCoincidencia || mejorPuntaje===0){
+    const reunionesSimilares=reuniones.filter(r=>{
+      const palabrasR=normTema(r.titulo).split(' ').filter(p=>p.length>3);
+      const coincidencias=palabrasTitulo.filter(p=>palabrasR.includes(p)).length;
+      return coincidencias>=1;
+    });
+    if(reunionesSimilares.length>0){
+      // Tomar el encargado de la reunión más reciente con tema similar
+      reunionesSimilares.sort((a,b)=>parseFecha(b.fecha)-parseFecha(a.fecha));
+      const encargados=reunionesSimilares[0].encargado;
+      if(encargados){
+        mejorCoincidencia=encargados.split(',').map(e=>e.trim());
+        mejorPuntaje=1;
+      }
+    }
+  }
+
+  if(mejorCoincidencia && mejorCoincidencia.length>0 && mejorPuntaje>0){
+    el.innerHTML=`<div class="asist-sugg"><i class="ti ti-star"></i><div><div style="font-weight:600;margin-bottom:2px">Sugerido por historial (ya conoce el tema):</div><div>${mejorCoincidencia.join(', ')}</div><div style="margin-top:3px;color:#94A3B8;font-size:11px">Asistió a un caso similar: <span style="cursor:pointer;color:#FCD34D;text-decoration:underline" onclick="marcarCheckSugerido('${mejorCoincidencia[0]}')">marcar a ${mejorCoincidencia[0]}</span></div></div></div>`;
+  } else {
+    el.innerHTML='';
+  }
+}
+
+// Marca automáticamente el checkbox del asistente sugerido, si existe en la lista
+function marcarCheckSugerido(nombreCompleto){
+  const apellido=nombreCompleto.toLowerCase().split(' ').pop();
+  document.querySelectorAll('.chk-asist').forEach(chk=>{
+    if(chk.value.toLowerCase().includes(apellido)){
+      chk.checked=true;
+      verificarConflictos();
+    }
+  });
 }
 
 function normTema(t){ return t.toLowerCase().replace(/[^a-záéíóúñ\s]/g,'').trim().substring(0,40); }
