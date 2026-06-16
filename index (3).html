@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>DINASED — Sistema de Reuniones</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet"/>
+<style>
+:root{
+  --azul:#0B2545;--azul2:#1B4B8A;--azul3:#2563EB;--azul4:#3B82F6;
+  --verde:#059669;--rojo:#DC2626;--ambar:#D97706;--lila:#7C3AED;
+  --fd:'Bebas Neue',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);overflow:hidden;max-width:100vw}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px);background-size:36px 36px;pointer-events:none;z-index:0}
+.bg-glow{position:fixed;top:-150px;right:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(37,99,235,.12) 0%,transparent 70%);pointer-events:none;z-index:0}
+
+/* ── LOGIN ── */
+.login-screen{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:var(--azul)}
+.login-box{background:#0F1E35;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 24px;width:92%;max-width:360px;text-align:center}
+.login-logo{width:52px;height:52px;background:linear-gradient(135deg,#1B4B8A,#2563EB);border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(59,130,246,.4);margin:0 auto 12px}
+.login-logo i{font-size:26px;color:#93C5FD}
+.login-title{font-family:var(--fd);font-size:26px;letter-spacing:3px;margin-bottom:2px}
+.login-sub{font-family:var(--fm);font-size:11px;color:#475569;margin-bottom:20px}
+.login-step{display:none}.login-step.activo{display:block}
+.select-user{width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:14px;font-family:var(--fb);color:#fff;outline:none;margin-bottom:12px;cursor:pointer}
+.select-user option{background:#0F1E35;color:#fff}
+.pin-display{display:flex;justify-content:center;gap:10px;margin:14px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:transparent;transition:all .2s}
+.pin-dot.fill{background:#2563EB;border-color:#2563EB}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.pin-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px;font-size:18px;font-weight:600;color:#fff;cursor:pointer;transition:all .15s;font-family:var(--fb)}
+.pin-btn:hover{background:rgba(37,99,235,.3);border-color:#2563EB}
+.pin-btn:active{transform:scale(.95)}
+.pin-btn.del{font-size:16px;color:#64748B}
+.pin-error{color:#FCA5A5;font-size:12px;font-family:var(--fm);margin-top:6px;min-height:18px}
+.btn-login{width:100%;padding:10px;background:#2563EB;border:none;color:#fff;border-radius:8px;font-size:14px;font-family:var(--fb);font-weight:600;cursor:pointer;margin-top:4px}
+.btn-back{background:none;border:none;color:#64748B;font-size:12px;font-family:var(--fm);cursor:pointer;margin-top:8px;display:flex;align-items:center;gap:4px;margin:8px auto 0}
+
+/* ── APP ── */
+.app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;min-height:600px;display:none}
+.app.visible{display:flex}
+
+/* HEADER */
+.hdr{flex-shrink:0;padding:0 16px;height:46px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(11,37,69,.95)}
+.logo-escudo{width:30px;height:30px;background:linear-gradient(135deg,#1B4B8A,#2563EB);border-radius:7px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(59,130,246,.4);flex-shrink:0}
+.logo-escudo i{font-size:16px;color:#93C5FD}
+.logo-nombre{font-family:var(--fd);font-size:20px;letter-spacing:2px}
+.logo-sub{font-family:var(--fm);font-size:11px;color:#475569}
+.hdr-mid{flex:1;text-align:center;font-family:var(--fm);font-size:13px;color:#475569;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:5px;padding:3px 10px;max-width:280px;margin:0 auto}
+.hdr-acc{display:flex;gap:6px;align-items:center}
+.user-badge{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:4px 8px;font-size:11px;font-family:var(--fm);cursor:pointer}
+.user-badge i{font-size:13px;color:#94A3B8}
+.role-chip{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600}
+.role-admin{background:rgba(37,99,235,.2);color:#93C5FD}
+.role-asist{background:rgba(5,150,105,.2);color:#6EE7B7}
+.btn-voz{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,#2563EB,#7C3AED);border:none;color:#fff;border-radius:6px;padding:5px 10px;font-size:13px;font-family:var(--fb);font-weight:500;cursor:pointer;white-space:nowrap}
+.btn-voz.grabando{background:linear-gradient(135deg,#DC2626,#F97316);animation:pulso 1s ease-in-out infinite}
+.notif-btn{width:28px;height:28px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.notif-btn i{font-size:14px;color:#94A3B8}
+.notif-dot{position:absolute;top:4px;right:4px;width:5px;height:5px;background:#DC2626;border-radius:50%}
+
+/* TABS */
+.tabs{flex-shrink:0;display:flex;padding:0 16px;background:rgba(0,0,0,.2);border-bottom:1px solid rgba(255,255,255,.05);height:34px;align-items:center;overflow-x:auto}
+.tabs::-webkit-scrollbar{height:0}
+.tab{padding:0 14px;height:100%;font-size:13px;font-weight:500;color:#64748B;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.tab.activo{color:#3B82F6;border-bottom-color:#2563EB}
+.tab i{font-size:15px}
+.tab.hidden{display:none}
+
+/* BODY */
+.body{flex:1;padding:10px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden;min-height:0}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;flex-shrink:0}
+.stat{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.stat-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stat-icon i{font-size:15px}
+.si-a{background:rgba(37,99,235,.2)}.si-a i{color:#3B82F6}
+.si-v{background:rgba(5,150,105,.2)}.si-v i{color:#34D399}
+.si-am{background:rgba(217,119,6,.2)}.si-am i{color:#FCD34D}
+.si-r{background:rgba(220,38,38,.2)}.si-r i{color:#FCA5A5}
+.si-rec{background:rgba(124,58,237,.2)}.si-rec i{color:#C4B5FD}
+.sv{font-family:var(--fd);font-size:26px;letter-spacing:1px;line-height:1}
+.sl{font-size:11px;color:#64748B;font-family:var(--fm)}
+.ss{font-size:11px;margin-top:1px}
+.grid3{flex:1;display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;min-height:0;overflow:hidden}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;flex-shrink:0}
+.card-ttl{font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px}
+.card-ttl i{font-size:15px;color:#3B82F6}
+.card-body{flex:1;overflow-y:auto;min-height:0}
+.card-body::-webkit-scrollbar{width:2px}
+.card-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:1px}
+.btn-new{background:#2563EB;color:#fff;border:none;border-radius:5px;padding:4px 9px;font-size:12px;font-family:var(--fb);font-weight:500;cursor:pointer;display:flex;align-items:center;gap:3px}
+.ri{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.ri:last-child{border-bottom:none}
+.ri-barra{width:2px;height:26px;border-radius:1px;flex-shrink:0}
+.ri-info{flex:1;min-width:0}
+.ri-tit{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri-meta{font-size:11px;color:#64748B;font-family:var(--fm)}
+.ri-badge{font-size:11px;padding:2px 5px;border-radius:3px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.btn-fin{background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);color:#34D399;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;font-family:var(--fb);white-space:nowrap;flex-shrink:0}
+.btn-fin:disabled{opacity:.3;cursor:not-allowed}
+.b-op{background:rgba(37,99,235,.2);color:#93C5FD}
+.b-ad{background:rgba(5,150,105,.2);color:#6EE7B7}
+.b-ca{background:rgba(217,119,6,.2);color:#FCD34D}
+.b-ur{background:rgba(220,38,38,.2);color:#FCA5A5}
+.b-di{background:rgba(124,58,237,.2);color:#C4B5FD}
+.b-co{background:rgba(8,145,178,.2);color:#67E8F9}
+.b-fin{background:rgba(100,116,139,.15);color:#94A3B8}
+.ai{display:flex;align-items:center;gap:7px;padding:5px 7px;background:rgba(255,255,255,.03);border-radius:5px;margin-bottom:4px;border:1px solid rgba(255,255,255,.04)}
+.ai-icon{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-tg{background:rgba(37,99,235,.2)}.ai-tg i{color:#3B82F6}
+.ai-gm{background:rgba(5,150,105,.2)}.ai-gm i{color:#34D399}
+.ai-icon i{font-size:14px}
+.at{font-size:13px;font-weight:500}
+.as{font-size:11px;color:#64748B;font-family:var(--fm)}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:6px}
+.cal-dh{font-size:11px;color:#64748B;text-align:center;font-family:var(--fm)}
+.cal-d{min-height:20px;border-radius:3px;padding:1px 2px;cursor:pointer;border:1px solid transparent}
+.cal-d:hover{background:rgba(255,255,255,.06)}
+.cal-d.hoy{background:rgba(37,99,235,.2);border-color:rgba(59,130,246,.4)}
+.cal-d.otro{opacity:.2}
+.cal-num{font-size:11px;text-align:right}
+.cal-d.hoy .cal-num{color:#3B82F6;font-weight:700}
+.cal-dot{width:3px;height:3px;border-radius:50%;margin:1px auto}
+.chat-area{flex:1;background:rgba(0,0,0,.2);border-radius:7px;padding:8px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
+.chat-area::-webkit-scrollbar{width:2px}
+.burbuja{max-width:90%;padding:6px 9px;border-radius:7px;font-size:13px;line-height:1.5}
+.burbuja.bot{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);align-self:flex-start}
+.burbuja.user{background:linear-gradient(135deg,#2563EB,#1B4B8A);align-self:flex-end}
+.burbuja.ok{background:rgba(5,150,105,.12);border:1px solid rgba(5,150,105,.25);align-self:flex-start;color:#6EE7B7}
+.bot-nom{font-size:11px;font-family:var(--fm);color:#64748B;margin-bottom:2px}
+.ia-input{display:flex;gap:5px;margin-top:5px;flex-shrink:0;align-items:center}
+.ia-txt{flex:1;padding:6px 9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:5px;font-size:13px;font-family:var(--fb);color:#fff;outline:none}
+.ia-txt:focus{border-color:#3B82F6}
+.ia-txt::placeholder{color:#475569}
+.btn-mic{width:27px;height:27px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.btn-mic.grabando{background:rgba(220,38,38,.3);border-color:#DC2626;animation:pulso 1s ease-in-out infinite}
+.btn-mic i{font-size:15px;color:#94A3B8}
+.btn-send{width:27px;height:27px;border-radius:5px;border:none;background:#2563EB;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.btn-send i{font-size:15px;color:#fff}
+.sugg{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;flex-shrink:0}
+.sugg-pill{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:3px;padding:2px 7px;font-size:11px;cursor:pointer;color:#94A3B8;font-family:var(--fb)}
+.sugg-pill:hover{background:rgba(37,99,235,.2);color:#93C5FD}
+.cr{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:8px;margin-top:4px}
+.cr-hdr{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.cr-hdr i{font-size:14px;color:#3B82F6}
+.campo{display:flex;gap:5px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.campo:last-child{border-bottom:none}
+.campo-lbl{font-size:11px;color:#64748B;min-width:65px;font-family:var(--fm)}
+.campo-val{font-size:13px;font-weight:500;flex:1}
+.cr-btns{display:flex;gap:5px;margin-top:6px}
+.btn-conf{flex:1;background:linear-gradient(135deg,#059669,#047857);border:none;color:#fff;border-radius:5px;padding:5px;font-size:13px;font-family:var(--fb);font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px}
+.btn-edit{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94A3B8;border-radius:5px;padding:5px 9px;font-size:13px;font-family:var(--fb);cursor:pointer}
+.status{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 16px;height:22px;background:rgba(0,0,0,.3);border-top:1px solid rgba(255,255,255,.04);font-size:11px;font-family:var(--fm);color:#475569}
+.s-dot{width:5px;height:5px;border-radius:50%;background:#059669;animation:pulse-dot 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes pulso{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.vista{display:none;flex:1;flex-direction:column;gap:8px;min-height:0;overflow:hidden}
+.vista.activa{display:flex}
+.agenda-hdr{font-size:12px;font-weight:600;color:#3B82F6;margin:8px 0 5px;font-family:var(--fm);padding-bottom:3px;border-bottom:1px solid rgba(255,255,255,.05)}
+.agenda-hdr:first-child{margin-top:0}
+
+/* RECURRENTES */
+.rec-item{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-radius:7px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.rec-icon{width:28px;height:28px;background:rgba(124,58,237,.2);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rec-icon i{font-size:14px;color:#C4B5FD}
+.rec-info{flex:1;min-width:0}
+.rec-tit{font-size:13px;font-weight:600}
+.rec-meta{font-size:11px;color:#64748B;font-family:var(--fm)}
+.rec-freq{font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(124,58,237,.2);color:#C4B5FD;font-family:var(--fm);white-space:nowrap;flex-shrink:0}
+.toggle-rec{position:relative;width:32px;height:18px;flex-shrink:0;display:inline-block}
+.toggle-rec input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{display:block;width:32px;height:18px;background:rgba(255,255,255,.1);border-radius:9px;cursor:pointer;transition:background .2s;position:relative}
+.toggle-rec input:checked + .toggle-track{background:#7C3AED}
+.toggle-track::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle-rec input:checked + .toggle-track::after{transform:translateX(14px)}
+
+/* ACTAS */
+.acta-item{background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.2);border-radius:7px;padding:8px 10px;margin-bottom:6px}
+.acta-hdr{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.acta-hdr i{font-size:13px;color:#34D399}
+.acta-tit{font-size:13px;font-weight:600;flex:1}
+.acta-fecha{font-size:11px;color:#64748B;font-family:var(--fm)}
+.acta-txt{font-size:12px;color:#94A3B8;line-height:1.5}
+.acta-asist{font-size:11px;color:#64748B;font-family:var(--fm);margin-top:4px;display:flex;align-items:center;gap:4px}
+
+/* USUARIOS */
+.usr-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.usr-avatar{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;flex-shrink:0}
+.usr-av-admin{background:linear-gradient(135deg,#1B4B8A,#2563EB)}
+.usr-av-asist{background:linear-gradient(135deg,#065F46,#059669)}
+.usr-info{flex:1}
+.usr-nom{font-size:13px;font-weight:600}
+.usr-det{font-size:11px;color:#64748B;font-family:var(--fm)}
+.usr-actions{display:flex;gap:6px;align-items:center}
+
+/* SUGERENCIA ASISTENTES */
+.asist-sugg{background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.25);border-radius:6px;padding:7px 10px;margin-bottom:8px;font-size:12px;color:#FCD34D;display:flex;align-items:flex-start;gap:6px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:#0F1E35;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:18px;width:92%;max-width:440px;max-height:92vh;overflow-y:auto}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.modal h3 i{font-size:15px}
+.fr{margin-bottom:9px}
+.fr label{display:block;font-size:11px;font-weight:500;color:#64748B;margin-bottom:3px;font-family:var(--fm)}
+.fr input,.fr select,.fr textarea{width:100%;padding:7px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;font-size:13px;font-family:var(--fb);color:#fff;outline:none}
+.fr input:focus,.fr select:focus,.fr textarea:focus{border-color:#3B82F6}
+.fr select option{background:#0F1E35}
+.fr textarea{resize:none;height:60px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ng{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:7px 9px}
+.nc{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.nc:last-child{margin-bottom:0}
+.nc input[type=checkbox]{accent-color:#2563EB;width:12px;height:12px}
+.nc label{font-size:12px;color:#94A3B8}
+.m-btns{display:flex;gap:6px;margin-top:12px;justify-content:flex-end}
+.btn-cancel{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94A3B8;border-radius:6px;padding:7px 13px;font-size:13px;font-family:var(--fb);cursor:pointer}
+.btn-save{background:#2563EB;border:none;color:#fff;border-radius:6px;padding:7px 14px;font-size:13px;font-family:var(--fb);font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px}
+.btn-save-lila{background:#7C3AED;border:none;color:#fff;border-radius:6px;padding:7px 14px;font-size:13px;font-family:var(--fb);font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px}
+.btn-save-green{background:#059669;border:none;color:#fff;border-radius:6px;padding:7px 14px;font-size:13px;font-family:var(--fb);font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px}
+.toast{position:fixed;bottom:32px;right:16px;background:#0F1E35;border:1px solid rgba(5,150,105,.4);border-radius:7px;padding:8px 12px;font-size:13px;color:#6EE7B7;display:flex;align-items:center;gap:6px;z-index:400;transform:translateY(60px);opacity:0;transition:all .3s;font-family:var(--fb)}
+.toast.visible{transform:translateY(0);opacity:1}
+.typing{display:flex;gap:3px;align-items:center;padding:2px 0}
+.typing span{width:4px;height:4px;background:#475569;border-radius:50%;animation:bounce .9s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+
+@media(max-width:768px){
+  html,body{overflow-x:hidden !important;overflow-y:auto !important;height:auto !important}
+  .app{height:auto !important;min-height:100vh}
+  .body{overflow:visible !important;height:auto !important;flex:none !important;padding:8px}
+  .grid3{grid-template-columns:1fr !important;height:auto !important;overflow:visible !important;flex:none !important}
+  .vista.activa{height:auto !important;overflow:visible !important;flex:none !important}
+  .hdr{padding:0 10px;height:48px;position:sticky;top:0;z-index:99}
+  .logo-sub,.hdr-mid{display:none}
+  .btn-voz{font-size:10px;padding:5px 8px}
+  .tabs{padding:0 4px;position:sticky;top:48px;z-index:98}
+  .tab{padding:0 10px;font-size:10px}
+  .stats{grid-template-columns:1fr 1fr;gap:6px}
+  .card{height:auto !important;overflow:visible}
+  .card-body{max-height:none !important;overflow:visible !important}
+  .status{font-size:9px;gap:5px}
+  .modal{width:100%;padding:14px}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- ── LOGIN ── -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo"><i class="ti ti-shield-check"></i></div>
+    <div class="login-title">DINASED</div>
+    <div class="login-sub">Sistema de Reuniones v2.0 · Acceso seguro</div>
+
+    <!-- PASO 1: seleccionar usuario -->
+    <div class="login-step activo" id="step1">
+      <div style="font-size:12px;color:#64748B;font-family:var(--fm);margin-bottom:10px">Seleccioná tu nombre</div>
+      <select class="select-user" id="sel-usuario">
+        <option value="">— Seleccionar —</option>
+      </select>
+      <button class="btn-login" onclick="irAPIN()">Continuar</button>
+    </div>
+
+    <!-- PASO 2: ingresar PIN -->
+    <div class="login-step" id="step2">
+      <div style="font-size:12px;color:#64748B;font-family:var(--fm);margin-bottom:4px">Ingresá tu PIN de 4 dígitos</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:10px" id="nombre-seleccionado"></div>
+      <div class="pin-display">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+      </div>
+      <div class="pin-pad">
+        <button class="pin-btn" onclick="pinPress('1')">1</button>
+        <button class="pin-btn" onclick="pinPress('2')">2</button>
+        <button class="pin-btn" onclick="pinPress('3')">3</button>
+        <button class="pin-btn" onclick="pinPress('4')">4</button>
+        <button class="pin-btn" onclick="pinPress('5')">5</button>
+        <button class="pin-btn" onclick="pinPress('6')">6</button>
+        <button class="pin-btn" onclick="pinPress('7')">7</button>
+        <button class="pin-btn" onclick="pinPress('8')">8</button>
+        <button class="pin-btn" onclick="pinPress('9')">9</button>
+        <button class="pin-btn del" onclick="pinClear()">C</button>
+        <button class="pin-btn" onclick="pinPress('0')">0</button>
+        <button class="pin-btn del" onclick="pinDel()"><i class="ti ti-backspace"></i></button>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+      <button class="btn-back" onclick="volverStep1()"><i class="ti ti-arrow-left" style="font-size:11px"></i> Cambiar usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div class="app" id="app">
+
+<header class="hdr">
+  <div class="logo-escudo"><i class="ti ti-shield-check"></i></div>
+  <div>
+    <div class="logo-nombre">DINASED</div>
+    <div class="logo-sub">Sistema de Reuniones v2.0</div>
+  </div>
+  <div class="hdr-mid" id="reloj">—</div>
+  <div class="hdr-acc">
+    <button class="btn-voz" id="btn-voz" onclick="toggleVoz()">
+      <i class="ti ti-microphone"></i> Dictar
+    </button>
+    <div class="user-badge" onclick="cerrarSesion()" title="Cerrar sesión">
+      <i class="ti ti-user"></i>
+      <span id="hdr-nombre">—</span>
+      <span class="role-chip" id="hdr-role">—</span>
+      <i class="ti ti-logout" style="font-size:11px;color:#64748B"></i>
+    </div>
+    <div class="notif-btn" onclick="setTab('notificaciones')">
+      <i class="ti ti-bell"></i><div class="notif-dot"></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" id="nav-tabs">
+  <div class="tab activo" onclick="setTab('dashboard')"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+  <div class="tab" onclick="setTab('agenda')"><i class="ti ti-calendar-event"></i>Agenda</div>
+  <div class="tab admin-only" onclick="setTab('recurrentes')"><i class="ti ti-refresh"></i>Recurrentes</div>
+  <div class="tab" onclick="setTab('actas')"><i class="ti ti-file-check"></i>Actas</div>
+  <div class="tab admin-only" onclick="setTab('notificaciones')"><i class="ti ti-bell"></i>Notificaciones</div>
+  <div class="tab admin-only" onclick="setTab('ia')"><i class="ti ti-brain"></i>Asistente IA</div>
+  <div class="tab admin-only" onclick="setTab('usuarios')"><i class="ti ti-users"></i>Usuarios</div>
+</nav>
+
+<main class="body">
+
+<!-- DASHBOARD -->
+<div class="vista activa" id="tab-dashboard">
+  <div class="stats">
+    <div class="stat"><div class="stat-icon si-a"><i class="ti ti-calendar-month"></i></div><div><div class="sv" id="st-total">0</div><div class="sl">Reuniones mes</div></div></div>
+    <div class="stat"><div class="stat-icon si-v"><i class="ti ti-calendar-week"></i></div><div><div class="sv" id="st-proximas">0</div><div class="sl">Próximas 7 días</div><div class="ss" style="color:#FCD34D" id="st-urg"></div></div></div>
+    <div class="stat"><div class="stat-icon si-am"><i class="ti ti-send"></i></div><div><div class="sv">18</div><div class="sl">Alertas enviadas</div></div></div>
+    <div class="stat"><div class="stat-icon si-r"><i class="ti ti-file-check"></i></div><div><div class="sv" id="st-actas">0</div><div class="sl">Actas registradas</div></div></div>
+    <div class="stat"><div class="stat-icon si-rec"><i class="ti ti-refresh"></i></div><div><div class="sv" id="st-rec">0</div><div class="sl">Recurrentes</div></div></div>
+  </div>
+  <div class="grid3">
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ttl"><i class="ti ti-calendar-week"></i>Próximas reuniones</div>
+        <button class="btn-new admin-only" onclick="abrirModal()"><i class="ti ti-plus" style="font-size:12px"></i>Nueva</button>
+      </div>
+      <div class="card-body" id="lista-proximas">
+        <div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center"><i class="ti ti-loader"></i> Cargando...</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-ttl"><i class="ti ti-bell-ringing"></i>Alertas recientes</div></div>
+      <div class="card-body">
+        <div class="ai"><div class="ai-icon ai-tg"><i class="ti ti-brand-telegram"></i></div><div><div class="at">Telegram · 1h antes</div><div class="as">REUNION TRABAJO · 18:37</div></div></div>
+        <div class="ai"><div class="ai-icon ai-gm"><i class="ti ti-mail"></i></div><div><div class="at">Gmail · Prueba sistema</div><div class="as">Enviado · 18:38</div></div></div>
+      </div>
+      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:7px;margin-top:7px;flex-shrink:0">
+        <div style="font-size:12px;font-weight:600;color:#3B82F6;margin-bottom:5px;font-family:var(--fm)" id="cal-mes-lbl">JUNIO 2026</div>
+        <div class="cal-g" id="cal-grid"></div>
+      </div>
+    </div>
+    <div class="card admin-only-card">
+      <div class="card-hdr">
+        <div class="card-ttl"><i class="ti ti-brain"></i>Asistente IA</div>
+        <span style="background:rgba(124,58,237,.2);color:#C4B5FD;font-size:11px;padding:2px 6px;border-radius:3px;font-family:var(--fm)">Gemini</span>
+      </div>
+      <div class="chat-area" id="chat">
+        <div class="burbuja bot"><div class="bot-nom">Asistente DINASED</div>Hola. Dictame una reunión y la agendo.</div>
+      </div>
+      <div class="sugg">
+        <div class="sugg-pill" onclick="usarSugg(this.innerText)">Reunión mañana 10:00 muertes violentas Mayor López</div>
+        <div class="sugg-pill" onclick="usarSugg(this.innerText)">Urgente hoy 15:00 sala DAI Crnl. Mora</div>
+      </div>
+      <div class="ia-input">
+        <button class="btn-mic" id="btn-mic" onclick="toggleVoz()"><i class="ti ti-microphone"></i></button>
+        <input class="ia-txt" id="input-txt" type="text" placeholder="Escribí la reunión..." onkeydown="if(event.key==='Enter')enviar()"/>
+        <button class="btn-send" onclick="enviar()"><i class="ti ti-send"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AGENDA -->
+<div class="vista" id="tab-agenda">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="font-family:var(--fd);font-size:20px;letter-spacing:2px">AGENDA</div>
+    <button class="btn-new admin-only" onclick="abrirModal()"><i class="ti ti-plus" style="font-size:12px"></i>Agendar</button>
+  </div>
+  <div class="card" style="flex:1">
+    <div class="card-body" id="lista-agenda">
+      <div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center"><i class="ti ti-loader" style="font-size:18px"></i><br>Cargando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- RECURRENTES (solo admin) -->
+<div class="vista" id="tab-recurrentes">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="font-family:var(--fd);font-size:20px;letter-spacing:2px">RECURRENTES</div>
+    <button class="btn-save-lila" onclick="abrirModalRec()" style="border-radius:5px;padding:4px 10px;font-size:12px"><i class="ti ti-plus" style="font-size:12px"></i>Nueva</button>
+  </div>
+  <div style="font-size:11px;color:#475569;font-family:var(--fm);flex-shrink:0"><i class="ti ti-info-circle" style="font-size:11px"></i> Se generan automáticamente cada día a las 7:00 AM</div>
+  <div class="card" style="flex:1"><div class="card-body" id="lista-rec"></div></div>
+</div>
+
+<!-- ACTAS -->
+<div class="vista" id="tab-actas">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="font-family:var(--fd);font-size:20px;letter-spacing:2px">ACTAS</div>
+    <div style="font-size:11px;color:#64748B;font-family:var(--fm)" id="actas-sub">Registro de reuniones finalizadas</div>
+  </div>
+  <div class="card" style="flex:1"><div class="card-body" id="lista-actas">
+    <div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center"><i class="ti ti-file-off" style="font-size:18px"></i><br>Sin actas aún. Finaliza una reunión para registrar.</div>
+  </div></div>
+</div>
+
+<!-- NOTIFICACIONES (solo admin) -->
+<div class="vista" id="tab-notificaciones">
+  <div style="font-family:var(--fd);font-size:20px;letter-spacing:2px;flex-shrink:0">NOTIFICACIONES</div>
+  <div class="card" style="flex:1">
+    <div class="card-body">
+      <div class="ai" style="padding:8px;margin-bottom:6px"><div class="ai-icon ai-tg" style="width:30px;height:30px"><i class="ti ti-brand-telegram" style="font-size:14px"></i></div><div style="flex:1"><div class="at">Telegram · Recordatorio 1h</div><div class="as">Jonathan · Hoy 18:37 · ✅ Entregado</div></div></div>
+      <div class="ai" style="padding:8px"><div class="ai-icon ai-gm" style="width:30px;height:30px"><i class="ti ti-mail" style="font-size:14px"></i></div><div style="flex:1"><div class="at">Gmail · Prueba del sistema</div><div class="as">jonathancuasquer.22333@gmail.com · ✅</div></div></div>
+    </div>
+    <div style="margin-top:7px;padding:7px 10px;background:rgba(37,99,235,.08);border-radius:6px;border:1px solid rgba(59,130,246,.15);font-size:11px;color:#93C5FD;font-family:var(--fm);flex-shrink:0">
+      <i class="ti ti-info-circle" style="font-size:11px;margin-right:4px"></i>Trigger activo · cada hora · 72h → 24h → 1h antes
+    </div>
+  </div>
+</div>
+
+<!-- ASISTENTE IA (solo admin) -->
+<div class="vista" id="tab-ia">
+  <div style="font-family:var(--fd);font-size:20px;letter-spacing:2px;flex-shrink:0">ASISTENTE IA</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-height:0">
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ttl"><i class="ti ti-brain"></i>Dictar o escribir reunión</div>
+        <span style="background:rgba(124,58,237,.2);color:#C4B5FD;font-size:11px;padding:2px 6px;border-radius:3px;font-family:var(--fm)">Gemini</span>
+      </div>
+      <div class="chat-area" id="chat2"></div>
+      <div class="sugg">
+        <div class="sugg-pill" onclick="usarSugg2(this.innerText)">Reunión mañana 10:00 muertes violentas Mayor López</div>
+        <div class="sugg-pill" onclick="usarSugg2(this.innerText)">Urgente hoy 15:00 sala DAI Crnl. Mora</div>
+      </div>
+      <div class="ia-input">
+        <button class="btn-mic" id="btn-mic2" onclick="toggleVoz2()"><i class="ti ti-microphone"></i></button>
+        <input class="ia-txt" id="input-txt2" type="text" placeholder="Escribí la reunión..." onkeydown="if(event.key==='Enter')enviar2()"/>
+        <button class="btn-send" onclick="enviar2()"><i class="ti ti-send"></i></button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-ttl"><i class="ti ti-table"></i>Google Sheets en tiempo real</div></div>
+      <div id="preview-sheet" style="font-size:12px;color:#64748B;font-family:var(--fm);display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:6px;text-align:center">
+        <i class="ti ti-table-off" style="font-size:22px;color:#334155"></i>Aquí aparecerá la fila guardada
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USUARIOS (solo admin) -->
+<div class="vista" id="tab-usuarios">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="font-family:var(--fd);font-size:20px;letter-spacing:2px">USUARIOS</div>
+    <button class="btn-new" onclick="abrirModalUsuario()"><i class="ti ti-plus" style="font-size:12px"></i>Agregar</button>
+  </div>
+  <div style="font-size:11px;color:#475569;font-family:var(--fm);flex-shrink:0">Gestión de accesos · PINs · Roles</div>
+  <div class="card" style="flex:1"><div class="card-body" id="lista-usuarios"></div></div>
+</div>
+
+</main>
+
+<div class="status">
+  <div class="s-dot"></div><span>Sistema activo</span><span>·</span>
+  <span>@DINASED_Reuniones_bot</span><span>·</span>
+  <span id="status-hora">—</span><span>·</span>
+  <span id="status-user">—</span>
+</div>
+</div>
+
+<div id="modal-container"></div>
+<div class="toast" id="toast"><i class="ti ti-circle-check" style="font-size:14px"></i><span id="toast-txt"></span></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const WEBAPP='https://script.google.com/macros/s/AKfycbytIU1aXiwuXLDMksycT_i8KcJchSSEnBgi22aSojorZj25E-a6W98cb3rkYabgt6iX/exec';
+const WEBAPP_READ='https://script.google.com/macros/s/AKfycbytIU1aXiwuXLDMksycT_i8KcJchSSEnBgi22aSojorZj25E-a6W98cb3rkYabgt6iX/exec';
+
+// ── USUARIOS POR DEFECTO ──────────────────────────────────────
+const USUARIOS_DEFAULT=[
+  {id:'u1',nombre:'Administrador DINASED',grado:'',rol:'admin',pin:'1234',activo:true},
+  {id:'u2',nombre:'Jonathan Cuasquer',grado:'SBTE',rol:'asistente',pin:'5678',activo:true},
+  {id:'u3',nombre:'Mantilla Gallardo Luis Eduardo',grado:'CRNL',rol:'asistente',pin:'',activo:true},
+  {id:'u4',nombre:'Barrera Jaramillo Jairo Nicolay',grado:'TCNL',rol:'asistente',pin:'',activo:true},
+  {id:'u5',nombre:'Puebla Viteri Oscar Vladimir',grado:'MAYR',rol:'asistente',pin:'',activo:true},
+  {id:'u6',nombre:'Lopez Moya Ricardo Vladimir',grado:'MAYR',rol:'asistente',pin:'',activo:true},
+  {id:'u7',nombre:'Fonseca Rivera Rodrigo Andres',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u8',nombre:'Manjarrez Guerrero Susana',grado:'TCNL',rol:'asistente',pin:'',activo:true},
+  {id:'u9',nombre:'Maruri Jativa Jorge Luis',grado:'MAYR',rol:'asistente',pin:'',activo:true},
+  {id:'u10',nombre:'Amores Reyes Cristhian Fernando',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u11',nombre:'Vasquez Rivera Ana Licette',grado:'TNTE',rol:'asistente',pin:'',activo:true},
+  {id:'u12',nombre:'Recalde Buitron Betty Marisela',grado:'TNTE',rol:'asistente',pin:'',activo:true},
+  {id:'u13',nombre:'Coyago Coyago Mayra Alexandra',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u14',nombre:'Tabango Ruiz Jorge Alfredo',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u15',nombre:'Gagnay Munoz Diana Carolina',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u16',nombre:'Norona Martinez Ana Aracely',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u17',nombre:'Flores Silva Danny Fernando',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+];
+
+// ── ESTADO ────────────────────────────────────────────────────
+let usuarios=[], reuniones=[], recurrentes=[], actas=[], memoriaAsistentes={};
+let usuarioActual=null;
+let pinActual='';
+let grabando=false, recognition=null, datosActuales=null;
+
+// ── LOCAL STORAGE ─────────────────────────────────────────────
+function cargarLocal(){
+  try{ usuarios=JSON.parse(localStorage.getItem('din_usuarios')||'null')||USUARIOS_DEFAULT; }catch(e){ usuarios=USUARIOS_DEFAULT; }
+  try{ recurrentes=JSON.parse(localStorage.getItem('din_rec')||'[]'); }catch(e){ recurrentes=[]; }
+  try{ actas=JSON.parse(localStorage.getItem('din_actas')||'[]'); }catch(e){ actas=[]; }
+  try{ memoriaAsistentes=JSON.parse(localStorage.getItem('din_memoria')||'{}'); }catch(e){ memoriaAsistentes={}; }
+  if(recurrentes.length===0){
+    recurrentes=[
+      {id:'REC-001',titulo:'Reunión semanal DAI',tipo:'Operativa',encargado:'SBTE Jonathan Cuasquer',lugar:'Sala DAI',hora:'09:00',frecuencia:'Semanal',dia:'Lunes',activo:true},
+      {id:'REC-002',titulo:'Informe quincenal DINASED',tipo:'Administrativa',encargado:'SBTE Jonathan Cuasquer',lugar:'Dirección',hora:'10:00',frecuencia:'Quincenal',dia:'Miércoles',activo:true},
+      {id:'REC-003',titulo:'Reunión mensual coordinación',tipo:'Coordinación',encargado:'SBTE Jonathan Cuasquer',lugar:'Sala Operaciones',hora:'08:00',frecuencia:'Mensual',dia:'',activo:true},
+    ];
+  }
+}
+function guardarLocal(){
+  localStorage.setItem('din_usuarios',JSON.stringify(usuarios));
+  localStorage.setItem('din_rec',JSON.stringify(recurrentes));
+  localStorage.setItem('din_actas',JSON.stringify(actas));
+  localStorage.setItem('din_memoria',JSON.stringify(memoriaAsistentes));
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────
+function initLogin(){
+  const sel=document.getElementById('sel-usuario');
+  sel.innerHTML='<option value="">— Seleccionar —</option>';
+  usuarios.filter(u=>u.activo&&u.nombre).forEach(u=>{
+    const op=document.createElement('option');
+    op.value=u.id;
+    op.textContent=(u.grado?u.grado+' ':'')+u.nombre;
+    sel.appendChild(op);
+  });
+}
+
+function irAPIN(){
+  const id=document.getElementById('sel-usuario').value;
+  if(!id){ toast('Seleccioná tu nombre',false); return; }
+  const u=usuarios.find(u=>u.id===id);
+  if(!u){ toast('Usuario no encontrado',false); return; }
+  usuarioActual=u;
+  pinActual='';
+  document.getElementById('nombre-seleccionado').textContent=(u.grado?u.grado+' ':'')+u.nombre;
+  document.getElementById('step1').classList.remove('activo');
+  document.getElementById('step2').classList.add('activo');
+  actualizarPinDots();
+}
+
+function volverStep1(){
+  pinActual='';
+  usuarioActual=null;
+  document.getElementById('pin-error').textContent='';
+  document.getElementById('step2').classList.remove('activo');
+  document.getElementById('step1').classList.add('activo');
+  actualizarPinDots();
+}
+
+function pinPress(d){
+  if(pinActual.length>=4) return;
+  pinActual+=d;
+  actualizarPinDots();
+  if(pinActual.length===4) setTimeout(verificarPIN,200);
+}
+function pinDel(){ pinActual=pinActual.slice(0,-1); actualizarPinDots(); }
+function pinClear(){ pinActual=''; actualizarPinDots(); }
+
+function actualizarPinDots(){
+  for(let i=0;i<4;i++){
+    document.getElementById('pd'+i).classList.toggle('fill',i<pinActual.length);
+  }
+}
+
+function verificarPIN(){
+  if(pinActual===usuarioActual.pin){
+    document.getElementById('pin-error').textContent='';
+    entrarAlSistema();
+  } else {
+    document.getElementById('pin-error').textContent='PIN incorrecto. Intentá de nuevo.';
+    pinActual='';
+    actualizarPinDots();
+    // Vibrar en móvil
+    navigator.vibrate && navigator.vibrate([100,50,100]);
+  }
+}
+
+function entrarAlSistema(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  aplicarRol();
+  actualizarReloj();
+  cargarReuniones();
+  renderCalendario();
+  renderUsuarios();
+  _msg('chat2','bot','Hola, '+usuarioActual.nombre+'. Dictame una reunión y la agendo.');
+}
+
+function cerrarSesion(){
+  if(!confirm('¿Cerrar sesión?')) return;
+  usuarioActual=null; pinActual='';
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('step2').classList.remove('activo');
+  document.getElementById('step1').classList.add('activo');
+  pinActual=''; actualizarPinDots();
+  initLogin();
+  setTab('dashboard');
+}
+
+// ── ROL ───────────────────────────────────────────────────────
+function aplicarRol(){
+  const esAdmin=usuarioActual.rol==='admin';
+  // Header
+  document.getElementById('hdr-nombre').textContent=(usuarioActual.grado?usuarioActual.grado+' ':'')+usuarioActual.nombre.split(' ')[0];
+  const chip=document.getElementById('hdr-role');
+  chip.textContent=esAdmin?'ADMIN':'ASISTENTE';
+  chip.className='role-chip '+(esAdmin?'role-admin':'role-asist');
+  document.getElementById('status-user').textContent=(esAdmin?'Admin':'Asistente')+' · '+(usuarioActual.grado?usuarioActual.grado+' ':'')+usuarioActual.nombre;
+
+  // Tabs
+  document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!esAdmin));
+  // Cards
+  document.querySelectorAll('.admin-only-card').forEach(el=>el.style.display=esAdmin?'flex':'none');
+  // Botones nueva reunión
+  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=esAdmin?'':'none');
+
+  // Si asistente, ajustar grid a 2 columnas
+  if(!esAdmin){
+    document.querySelector('.grid3').style.gridTemplateColumns='1fr 1fr';
+  } else {
+    document.querySelector('.grid3').style.gridTemplateColumns='';
+  }
+
+  // Actas: asistente solo ve las suyas
+  document.getElementById('actas-sub').textContent=esAdmin
+    ?'Registro de todas las reuniones finalizadas'
+    :'Solo las reuniones donde participaste';
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+const TABS=['dashboard','agenda','recurrentes','actas','notificaciones','ia','usuarios'];
+function setTab(t){
+  // Verificar permiso
+  const adminTabs=['recurrentes','notificaciones','ia','usuarios'];
+  if(adminTabs.includes(t) && usuarioActual?.rol!=='admin'){ toast('Acceso solo para administradores',false); return; }
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('activo'));
+  document.querySelectorAll('.vista').forEach(e=>e.classList.remove('activa'));
+  TABS.forEach((n,i)=>{
+    if(n===t){
+      document.querySelectorAll('.tab')[i].classList.add('activo');
+      document.getElementById('tab-'+t).classList.add('activa');
+    }
+  });
+  if(t==='recurrentes') renderRec();
+  if(t==='actas') renderActas();
+  if(t==='agenda') renderAgenda();
+  if(t==='usuarios') renderUsuarios();
+}
+
+// ── RELOJ ─────────────────────────────────────────────────────
+function actualizarReloj(){
+  const n=new Date();
+  const f=n.toLocaleDateString('es-EC',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  const h=n.toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('reloj').textContent=`${f} · ${h}`;
+  document.getElementById('status-hora').textContent=h;
+}
+setInterval(actualizarReloj,1000);
+
+// ── TOAST ─────────────────────────────────────────────────────
+function toast(msg,ok=true){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-txt').textContent=msg;
+  t.style.borderColor=ok?'rgba(5,150,105,.4)':'rgba(220,38,38,.4)';
+  t.style.color=ok?'#6EE7B7':'#FCA5A5';
+  t.classList.add('visible');
+  setTimeout(()=>t.classList.remove('visible'),3500);
+}
+
+// ── COLORES ───────────────────────────────────────────────────
+const CTIPO={'Urgente':'#EF4444','Operativa':'#3B82F6','Administrativa':'#10B981','Capacitación':'#F59E0B','Diligencia':'#8B5CF6','Coordinación':'#14B8A6'};
+const BTIPO={'Urgente':'b-ur','Operativa':'b-op','Administrativa':'b-ad','Capacitación':'b-ca','Diligencia':'b-di','Coordinación':'b-co','Finalizada':'b-fin'};
+
+// ── CARGAR REUNIONES ──────────────────────────────────────────
+function cargarReuniones(){
+  document.getElementById('lista-proximas').innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center"><i class="ti ti-loader"></i> Cargando reuniones...</div>';
+
+  const cb='dinasedCB'+Date.now();
+  const timeout=setTimeout(()=>{
+    if(window[cb]){ delete window[cb]; renderFallback(); }
+  }, 12000);
+
+  window[cb]=function(data){
+    clearTimeout(timeout);
+    delete window[cb];
+    if(data && data.ok && data.reuniones){
+      // Filtrar fechas inválidas por si acaso
+      reuniones=data.reuniones.filter(r=>{
+        if(!r.fecha) return false;
+        if(r.fecha.includes('1969')||r.fecha.includes('1899')||r.fecha.includes('Dec')) return false;
+        return true;
+      });
+      renderProximas();
+      renderCalendario();
+      actualizarStats();
+    } else {
+      renderFallback();
+    }
+  };
+
+  const s=document.createElement('script');
+  s.src=WEBAPP_READ+'?accion=reuniones&callback='+cb+'&nocache='+Date.now();
+  s.onerror=function(){ clearTimeout(timeout); delete window[cb]; renderFallback(); };
+  document.head.appendChild(s);
+}
+
+function esDeUsuario(r){
+  if(!usuarioActual || usuarioActual.rol==='admin') return true;
+  const nombre=usuarioActual.nombre.toLowerCase().trim();
+  const grado=(usuarioActual.grado||'').toLowerCase().trim();
+  const apellido=nombre.split(' ').pop(); // apellido = última palabra
+  const nombreCompleto=(grado+' '+nombre).trim();
+  // El campo encargado puede tener múltiples personas separadas por coma
+  const listaEnc=(r.encargado||'').toLowerCase().split(',').map(e=>e.trim());
+  return listaEnc.some(enc=>
+    enc.includes(apellido) ||
+    enc.includes(nombre) ||
+    enc.includes(nombreCompleto) ||
+    nombreCompleto.includes(enc.split(' ').pop())
+  );
+}
+
+function renderProximas(){
+  const el=document.getElementById('lista-proximas');
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  let prox=reuniones.filter(r=>{ const f=parseFecha(r.fecha); if(!f) return false; const fTime=f.getTime(); const hoyTime=hoy.getTime(); return fTime>=hoyTime && r.estado!=='Finalizada'; })
+    .sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha)).slice(0,7);
+  if(!prox.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center">Sin reuniones próximas</div>'; return; }
+  el.innerHTML=prox.map(r=>{
+    const col=CTIPO[r.tipo]||'#3B82F6'; const badge=BTIPO[r.tipo]||'b-ad';
+    const fd=parseFecha(r.fecha); const esHoy=esMismaFecha(fd,new Date());
+    const puedeFin=esDeUsuario(r);
+    return `<div class="ri">
+      <div class="ri-barra" style="background:${col}"></div>
+      <div class="ri-info">
+        <div class="ri-tit">${r.titulo}</div>
+        <div class="ri-meta">${esHoy?'<span style="color:#EF4444;font-weight:600">HOY</span> · ':''}${formatCorta(r.fecha)} · ${r.hora||''} · ${r.lugar||'—'}</div>
+      </div>
+      <span class="ri-badge ${badge}">${r.tipo}</span>
+      <button class="btn-fin" ${!puedeFin?'disabled title="No eres el encargado"':''} onclick="${puedeFin?`abrirModalFin('${r.id}','${r.titulo.replace(/'/g,"\\'")}','${r.fecha}')`:''}" >Finalizar</button>
+    </div>`;
+  }).join('');
+}
+
+function renderFallback(){
+  document.getElementById('lista-proximas').innerHTML=`<div style="font-size:11px;color:#FCD34D;font-family:var(--fm);padding:8px;background:rgba(217,119,6,.08);border-radius:5px"><i class="ti ti-wifi-off" style="font-size:11px"></i> Sin conexión al Sheet</div>`;
+}
+
+function renderAgenda(){
+  const el=document.getElementById('lista-agenda');
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  let lista=reuniones.filter(r=>{ const f=parseFecha(r.fecha); return f && f.getTime()>=hoy.getTime(); }).sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha));
+  if(!lista.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center">Sin reuniones próximas</div>'; return; }
+  const grupos={};
+  lista.forEach(r=>{ const k=r.fecha; if(!grupos[k]) grupos[k]=[]; grupos[k].push(r); });
+  const now=new Date(), man=new Date(now.getTime()+86400000);
+  el.innerHTML=Object.entries(grupos).map(([f,rs])=>{
+    const fd=parseFecha(f);
+    const etiq=esMismaFecha(fd,now)?'HOY':esMismaFecha(fd,man)?'MAÑANA':formatLarga(f);
+    return `<div class="agenda-hdr">${etiq} · ${formatLarga(f)}</div>`+rs.map(r=>{
+      const col=CTIPO[r.tipo]||'#3B82F6'; const fin=r.estado==='Finalizada'; const puedeFin=esDeUsuario(r)&&!fin;
+      return `<div class="ri">
+        <div class="ri-barra" style="background:${col};height:30px"></div>
+        <div class="ri-info"><div class="ri-tit">${r.titulo}</div><div class="ri-meta">${r.hora||''} · ${r.lugar||'—'} · ${r.encargado||''}</div></div>
+        <span class="ri-badge ${fin?'b-fin':BTIPO[r.tipo]||'b-ad'}">${fin?'Finalizada':r.tipo}</span>
+        ${puedeFin?`<button class="btn-fin" onclick="abrirModalFin('${r.id}','${r.titulo.replace(/'/g,"\\'")}','${r.fecha}')">Finalizar</button>`:''}
+      </div>`;
+    }).join('');
+  }).join('');
+}
+
+function renderCalendario(){
+  const hoy=new Date(); const year=hoy.getFullYear(), month=hoy.getMonth();
+  const meses=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  document.getElementById('cal-mes-lbl').textContent=meses[month]+' '+year;
+  const fechas={}; reuniones.forEach(r=>{ if(!fechas[r.fecha]) fechas[r.fecha]=CTIPO[r.tipo]||'#3B82F6'; });
+  const primer=new Date(year,month,1).getDay(); const dias=new Date(year,month+1,0).getDate();
+  const off=primer===0?6:primer-1;
+  let h='<div class="cal-dh">L</div><div class="cal-dh">M</div><div class="cal-dh">X</div><div class="cal-dh">J</div><div class="cal-dh">V</div><div class="cal-dh">S</div><div class="cal-dh">D</div>';
+  for(let i=0;i<off;i++) h+='<div class="cal-d otro"></div>';
+  for(let d=1;d<=dias;d++){
+    const f=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const esH=d===hoy.getDate(); const col=fechas[f];
+    h+=`<div class="cal-d${esH?' hoy':''}"><div class="cal-num">${d}</div>${col?`<div class="cal-dot" style="background:${col}"></div>`:''}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=h;
+}
+
+function actualizarStats(){
+  const hoy=new Date(); hoy.setHours(0,0,0,0); const en7=new Date(hoy.getTime()+7*86400000);
+  const mes=new Date().getMonth();
+  document.getElementById('st-total').textContent=reuniones.filter(r=>{const f=parseFecha(r.fecha);return f&&f.getMonth()===mes;}).length;
+  const prox=reuniones.filter(r=>{const f=parseFecha(r.fecha);return f&&f>=hoy&&f<=en7&&r.estado!=='Finalizada';});
+  document.getElementById('st-proximas').textContent=prox.length;
+  const urg=prox.filter(r=>r.tipo==='Urgente').length;
+  document.getElementById('st-urg').textContent=urg>0?urg+' urgentes':'';
+  document.getElementById('st-actas').textContent=actas.length;
+  document.getElementById('st-rec').textContent=recurrentes.filter(r=>r.activo).length;
+}
+
+// ── MODAL NUEVA REUNIÓN (solo admin) ─────────────────────────
+function abrirModal(){
+  if(usuarioActual?.rol!=='admin'){ toast('Solo el administrador puede crear reuniones',false); return; }
+  const hoy=new Date().toISOString().split('T')[0];
+  // Generar checkboxes de asistentes
+  const asistentes=usuarios.filter(u=>u.activo&&u.nombre&&u.rol==='asistente');
+  const checksHTML=asistentes.map(u=>{
+    const nom=(u.grado?u.grado+' ':'')+u.nombre;
+    return `<div class="nc" style="margin-bottom:5px">
+      <input type="checkbox" class="chk-asist" value="${nom}" id="chk-${u.id}" onchange="verificarConflictos()">
+      <label for="chk-${u.id}" style="font-size:12px;cursor:pointer">${nom}</label>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-container').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal">
+      <h3><i class="ti ti-calendar-plus" style="color:#3B82F6"></i>Nueva reunión</h3>
+      <div id="sugg-asist"></div>
+      <div class="fr"><label>Título / Tema</label><input id="m-titulo" type="text" placeholder="Ej: Muertes por causas externas DIGIN" oninput="chkMemoria(this.value)"/></div>
+      <div class="fg2"><div class="fr"><label>Fecha</label><input id="m-fecha" type="date" value="${hoy}" onchange="verificarConflictos()"/></div><div class="fr"><label>Hora</label><input id="m-hora" type="time" value="09:00" onchange="verificarConflictos()"/></div></div>
+      <div class="fg2"><div class="fr"><label>Tipo</label><select id="m-tipo"><option>Operativa</option><option>Administrativa</option><option>Capacitación</option><option>Urgente</option><option>Diligencia</option><option>Coordinación</option></select></div><div class="fr"><label>Lugar</label><input id="m-lugar" type="text" placeholder="Sala DAI..."/></div></div>
+      <div class="fr">
+        <label>Asistentes a enviar <span style="color:#64748B;font-weight:400">(seleccioná uno o varios)</span></label>
+        <div class="ng" style="max-height:160px;overflow-y:auto">
+          ${checksHTML}
+          <div style="border-top:1px solid rgba(255,255,255,.06);margin-top:5px;padding-top:5px">
+            <div class="nc"><input type="checkbox" id="chk-otro" onchange="document.getElementById('m-otro').style.display=this.checked?'block':'none'"><label for="chk-otro" style="font-size:12px">Otro (escribir)</label></div>
+            <input id="m-otro" type="text" placeholder="Nombre del asistente..." style="display:none;margin-top:5px;width:100%;padding:5px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:5px;font-size:12px;color:#fff;font-family:var(--fb);outline:none"/>
+          </div>
+        </div>
+        <div id="alerta-conflicto" style="display:none;margin-top:6px;padding:6px 8px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:5px;font-size:11px;color:#FCA5A5;font-family:var(--fm)"></div>
+      </div>
+      <div class="fr"><label>Descripción</label><textarea id="m-desc" placeholder="Agenda de la reunión..."></textarea></div>
+      <div class="fr"><label>Alertas</label><div class="ng">
+        <div class="nc"><input type="checkbox" checked id="n72"><label for="n72" style="font-size:12px">72h antes</label></div>
+        <div class="nc"><input type="checkbox" checked id="n24"><label for="n24" style="font-size:12px">24h antes</label></div>
+        <div class="nc"><input type="checkbox" checked id="n1"><label for="n1" style="font-size:12px">1h antes</label></div>
+        <div style="border-top:1px solid rgba(255,255,255,.06);margin-top:5px;padding-top:5px">
+          <div class="nc"><input type="checkbox" checked><label style="font-size:12px"><i class="ti ti-brand-telegram" style="font-size:12px;margin-right:2px"></i>Telegram</label></div>
+          <div class="nc"><input type="checkbox" checked><label style="font-size:12px"><i class="ti ti-mail" style="font-size:12px;margin-right:2px"></i>Gmail</label></div>
+        </div>
+      </div></div>
+      <div class="m-btns">
+        <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-save" onclick="guardarDesdeModal()"><i class="ti ti-check" style="font-size:13px"></i>Guardar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Verificar conflictos de horario al seleccionar fecha/hora/asistentes
+function verificarConflictos(){
+  const fecha=document.getElementById('m-fecha')?.value;
+  const hora=document.getElementById('m-hora')?.value;
+  const alertEl=document.getElementById('alerta-conflicto');
+  if(!fecha || !hora || !alertEl) return;
+  const checks=[...document.querySelectorAll('.chk-asist:checked')].map(c=>c.value);
+  if(checks.length===0){ alertEl.style.display='none'; return; }
+  const conflictos=[];
+  checks.forEach(asist=>{
+    const tienConflicto=reuniones.some(r=>{
+      if(r.estado==='Finalizada') return false;
+      if(r.fecha!==fecha) return false;
+      // Comparar hora (tolerancia 1h)
+      const h1=parseInt((r.hora||'00:00').split(':')[0]);
+      const h2=parseInt(hora.split(':')[0]);
+      if(Math.abs(h1-h2)>1) return false;
+      // Verificar si este asistente está en esa reunión
+      const enc=(r.encargado||'').toLowerCase();
+      const apellido=asist.split(' ').pop().toLowerCase();
+      return enc.includes(apellido);
+    });
+    if(tienConflicto) conflictos.push(asist);
+  });
+  if(conflictos.length>0){
+    alertEl.style.display='block';
+    alertEl.innerHTML='⚠️ Conflicto de horario detectado:<br>'+conflictos.map(c=>'• '+c).join('<br>');
+  } else {
+    alertEl.style.display='none';
+  }
+}
+
+function chkMemoria(titulo){
+  const key=normTema(titulo); const mem=memoriaAsistentes[key];
+  const el=document.getElementById('sugg-asist'); if(!el) return;
+  if(mem && mem.length>0 && titulo.length>5){
+    el.innerHTML=`<div class="asist-sugg"><i class="ti ti-star"></i><div><div style="font-weight:600;margin-bottom:2px">Sugerido por historial:</div><div>${mem.join(', ')}</div><div style="margin-top:3px;color:#94A3B8;font-size:11px">La última vez asistió: <span style="cursor:pointer;color:#FCD34D;text-decoration:underline" onclick="document.getElementById('m-encargado').value='${mem[0]}'">${mem[0]}</span></div></div></div>`;
+  } else el.innerHTML='';
+}
+
+function normTema(t){ return t.toLowerCase().replace(/[^a-záéíóúñ\s]/g,'').trim().substring(0,40); }
+
+function cerrarModal(){ document.getElementById('modal-container').innerHTML=''; }
+
+async function guardarDesdeModal(){
+  const titulo=document.getElementById('m-titulo').value;
+  if(!titulo){ alert('Ingresá el título'); return; }
+  // Recoger asistentes seleccionados
+  const checks=[...document.querySelectorAll('.chk-asist:checked')].map(c=>c.value);
+  const otro=document.getElementById('m-otro')?.value?.trim();
+  if(otro && document.getElementById('chk-otro')?.checked) checks.push(otro);
+  if(checks.length===0){ alert('Seleccioná al menos un asistente'); return; }
+  // Verificar conflictos antes de guardar
+  const fecha=document.getElementById('m-fecha').value;
+  const hora=document.getElementById('m-hora').value;
+  const conflictos=[];
+  checks.forEach(asist=>{
+    const tienConflicto=reuniones.some(r=>{
+      if(r.estado==='Finalizada') return false;
+      if(r.fecha!==fecha) return false;
+      const h1=parseInt((r.hora||'00:00').split(':')[0]);
+      const h2=parseInt(hora.split(':')[0]);
+      if(Math.abs(h1-h2)>1) return false;
+      const enc=(r.encargado||'').toLowerCase();
+      const apellido=asist.split(' ').pop().toLowerCase();
+      return enc.includes(apellido);
+    });
+    if(tienConflicto) conflictos.push(asist);
+  });
+  if(conflictos.length>0){
+    const ok=confirm('⚠️ CONFLICTO DE HORARIO\n\nLas siguientes personas ya tienen otra reunión en esa fecha/hora:\n'+conflictos.map(c=>'• '+c).join('\n')+'\n\n¿Deseas continuar de todas formas?');
+    if(!ok) return;
+  }
+  const encargado=checks.join(', ');
+  const datos={titulo,fecha,hora,tipo:document.getElementById('m-tipo').value,lugar:document.getElementById('m-lugar').value,encargado,descripcion:document.getElementById('m-desc').value,creadoPor:'Admin — Interfaz Web'};
+  cerrarModal(); toast('Guardando...');
+  await guardarEnSheet(datos);
+}
+
+// ── MODAL FINALIZAR ───────────────────────────────────────────
+function abrirModalFin(id,titulo,fecha){
+  document.getElementById('modal-container').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal">
+      <h3><i class="ti ti-file-check" style="color:#34D399"></i>Finalizar reunión · Registrar acta</h3>
+      <div style="background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.2);border-radius:6px;padding:8px 10px;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:600">${titulo}</div>
+        <div style="color:#64748B;font-size:11px;font-family:var(--fm)">${fecha}</div>
+      </div>
+      <div class="fr"><label>Asistentes que participaron</label>
+        <input id="fin-asist" type="text" value="${(usuarioActual.grado?usuarioActual.grado+' ':'')+usuarioActual.nombre}" placeholder="SBTE Cuasquer, Mayor López..."/>
+        <div style="font-size:10px;color:#475569;font-family:var(--fm);margin-top:3px">Separá con comas si fueron varios</div>
+      </div>
+      <div class="fr"><label>Temas tratados (el Jefe verá esto)</label><textarea id="fin-temas" style="height:80px" placeholder="Detallá los temas discutidos..."></textarea></div>
+      <div class="fr"><label>Acuerdos / Acciones a tomar</label><textarea id="fin-acuerdos" style="height:55px" placeholder="Tareas asignadas, decisiones..."></textarea></div>
+      <div class="fr"><label>Próxima reunión del mismo tema (opcional)</label><input id="fin-prox" type="date"/></div>
+      <div class="m-btns">
+        <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-save-green" onclick="finalizarReunion('${id}','${titulo.replace(/'/g,"\\'")}','${fecha}')">
+          <i class="ti ti-check" style="font-size:13px"></i>Registrar acta
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function finalizarReunion(id,titulo,fecha){
+  const asist=document.getElementById('fin-asist').value;
+  const temas=document.getElementById('fin-temas').value;
+  const acuerdos=document.getElementById('fin-acuerdos').value;
+  const proxFecha=document.getElementById('fin-prox').value;
+  if(!temas){ alert('Ingresá los temas tratados'); return; }
+  // Guardar acta
+  const acta={id:'ACTA-'+Date.now(),reunionId:id,titulo,fecha,asistentes:asist,temas,acuerdos,proxFecha,fechaRegistro:new Date().toISOString(),registradoPor:(usuarioActual.grado?usuarioActual.grado+' ':'')+usuarioActual.nombre};
+  actas.unshift(acta);
+  // Memoria de asistentes por tema
+  const key=normTema(titulo);
+  memoriaAsistentes[key]=asist.split(',').map(a=>a.trim()).filter(Boolean);
+  guardarLocal();
+  // Marcar local
+  const r=reuniones.find(r=>r.id===id); if(r) r.estado='Finalizada';
+  cerrarModal();
+  renderProximas(); renderCalendario(); actualizarStats();
+  toast('✅ Acta registrada');
+  if(proxFecha){
+    setTimeout(()=>{
+      if(confirm(`¿Agendar la próxima reunión de "${titulo}" para el ${proxFecha}?\n\nSe sugerirá automáticamente el mismo asistente.`)){
+        abrirModalConHistorial(titulo,proxFecha,memoriaAsistentes[key]||[]);
+      }
+    },800);
+  }
+}
+
+function abrirModalConHistorial(titulo,fecha,asistentes){
+  const sugg=asistentes.length>0?`<div class="asist-sugg"><i class="ti ti-star"></i><div><div style="font-weight:600;margin-bottom:2px">Asistente sugerido por historial:</div><div>${asistentes.join(', ')}</div></div></div>`:'';
+  document.getElementById('modal-container').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal">
+      <h3><i class="ti ti-calendar-plus" style="color:#3B82F6"></i>Agendar próxima reunión</h3>
+      ${sugg}
+      <div class="fr"><label>Título</label><input id="m-titulo" type="text" value="${titulo}"/></div>
+      <div class="fg2"><div class="fr"><label>Fecha</label><input id="m-fecha" type="date" value="${fecha}"/></div><div class="fr"><label>Hora</label><input id="m-hora" type="time" value="09:00"/></div></div>
+      <div class="fg2"><div class="fr"><label>Tipo</label><select id="m-tipo"><option>Operativa</option><option>Administrativa</option></select></div><div class="fr"><label>Lugar</label><input id="m-lugar" type="text" placeholder="Sala DAI..."/></div></div>
+      <div class="fr"><label>Encargado</label><input id="m-encargado" type="text" value="${asistentes[0]||''}"/></div>
+      <div class="fr"><label>Descripción</label><textarea id="m-desc" placeholder="Continuación del tema..."></textarea></div>
+      <div class="m-btns">
+        <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-save" onclick="guardarDesdeModal()"><i class="ti ti-check" style="font-size:13px"></i>Guardar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── ACTAS ─────────────────────────────────────────────────────
+function renderActas(){
+  const el=document.getElementById('lista-actas');
+  const esAdmin=usuarioActual?.rol==='admin';
+  const lista=esAdmin?actas:actas.filter(a=>{
+    const nom=((usuarioActual.grado?usuarioActual.grado+' ':'')+usuarioActual.nombre).toLowerCase();
+    return (a.asistentes||'').toLowerCase().includes(nom.split(' ').pop());
+  });
+  if(!lista.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center"><i class="ti ti-file-off" style="font-size:18px"></i><br>Sin actas aún.</div>'; return; }
+  el.innerHTML=lista.map(a=>`
+    <div class="acta-item">
+      <div class="acta-hdr"><i class="ti ti-file-check"></i><div class="acta-tit">${a.titulo}</div><div class="acta-fecha">${formatCorta(a.fecha)}</div></div>
+      <div class="acta-txt"><strong style="color:#94A3B8">Temas:</strong> ${a.temas}</div>
+      ${a.acuerdos?`<div class="acta-txt" style="margin-top:3px"><strong style="color:#94A3B8">Acuerdos:</strong> ${a.acuerdos}</div>`:''}
+      <div class="acta-asist"><i class="ti ti-users" style="font-size:11px"></i> ${a.asistentes}</div>
+      <div class="acta-asist" style="color:#64748B"><i class="ti ti-pencil" style="font-size:11px"></i> Registrado por: ${a.registradoPor}</div>
+      ${a.proxFecha?`<div class="acta-asist" style="color:#FCD34D"><i class="ti ti-calendar-event" style="font-size:11px"></i> Próxima: ${formatCorta(a.proxFecha)}</div>`:''}
+    </div>`).join('');
+}
+
+// ── RECURRENTES ───────────────────────────────────────────────
+function renderRec(){
+  const el=document.getElementById('lista-rec');
+  if(!recurrentes.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center">Sin plantillas. Creá la primera.</div>'; return; }
+  el.innerHTML=recurrentes.map(r=>`
+    <div class="rec-item" style="opacity:${r.activo?1:.5}">
+      <div class="rec-icon"><i class="ti ti-refresh"></i></div>
+      <div class="rec-info">
+        <div class="rec-tit">${r.titulo}</div>
+        <div class="rec-meta">${r.hora} · ${r.lugar||'—'} · ${r.encargado||'—'}</div>
+        <div class="rec-meta">${r.frecuencia}${r.dia?' · '+r.dia:''} · ${r.tipo}</div>
+      </div>
+      <span class="rec-freq">${r.frecuencia}</span>
+      <label class="toggle-rec">
+        <input type="checkbox" ${r.activo?'checked':''} onchange="toggleRec('${r.id}',this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+      <div style="display:flex;gap:4px">
+        <button onclick="abrirModalRec('${r.id}')" style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);color:#93C5FD;border-radius:4px;padding:3px 7px;font-size:11px;cursor:pointer"><i class="ti ti-edit" style="font-size:11px"></i></button>
+        <button onclick="elimRec('${r.id}')" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.2);color:#FCA5A5;border-radius:4px;padding:3px 7px;font-size:11px;cursor:pointer"><i class="ti ti-trash" style="font-size:11px"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function abrirModalRec(id=null){
+  const r=id?recurrentes.find(x=>x.id===id):{id:'REC-'+Date.now(),titulo:'',tipo:'Operativa',encargado:'',lugar:'',hora:'09:00',frecuencia:'Semanal',dia:'Lunes',activo:true};
+  document.getElementById('modal-container').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal">
+      <h3><i class="ti ti-refresh" style="color:#C4B5FD"></i>${id?'Editar':'Nueva'} recurrente</h3>
+      <div class="fr"><label>Título</label><input id="r-tit" type="text" value="${r.titulo}" placeholder="Reunión semanal DAI..."/></div>
+      <div class="fg2"><div class="fr"><label>Tipo</label><select id="r-tipo"><option ${r.tipo==='Operativa'?'selected':''}>Operativa</option><option ${r.tipo==='Administrativa'?'selected':''}>Administrativa</option><option ${r.tipo==='Capacitación'?'selected':''}>Capacitación</option><option ${r.tipo==='Coordinación'?'selected':''}>Coordinación</option></select></div><div class="fr"><label>Hora</label><input id="r-hora" type="time" value="${r.hora}"/></div></div>
+      <div class="fr"><label>Lugar</label><input id="r-lugar" type="text" value="${r.lugar}" placeholder="Sala DAI..."/></div>
+      <div class="fr"><label>Encargado</label>
+        <select id="r-enc-sel" onchange="if(this.value)document.getElementById('r-enc').value=this.value">
+          <option value="">— Seleccionar —</option>
+          ${usuarios.filter(u=>u.activo&&u.nombre&&u.rol==='asistente').map(u=>`<option value="${(u.grado?u.grado+' ':'')+u.nombre}">${(u.grado?u.grado+' ':'')+u.nombre}</option>`).join('')}
+        </select>
+        <input id="r-enc" type="text" value="${r.encargado}" placeholder="O escribí..." style="margin-top:5px"/>
+      </div>
+      <div class="fg2"><div class="fr"><label>Frecuencia</label><select id="r-freq"><option ${r.frecuencia==='Diaria'?'selected':''}>Diaria</option><option ${r.frecuencia==='Semanal'?'selected':''}>Semanal</option><option ${r.frecuencia==='Quincenal'?'selected':''}>Quincenal</option><option ${r.frecuencia==='Mensual'?'selected':''}>Mensual</option></select></div><div class="fr"><label>Día</label><select id="r-dia"><option ${r.dia==='Lunes'?'selected':''}>Lunes</option><option ${r.dia==='Martes'?'selected':''}>Martes</option><option ${r.dia==='Miércoles'?'selected':''}>Miércoles</option><option ${r.dia==='Jueves'?'selected':''}>Jueves</option><option ${r.dia==='Viernes'?'selected':''}>Viernes</option></select></div></div>
+      <div class="m-btns">
+        <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-save-lila" onclick="guardarRec('${r.id}')"><i class="ti ti-check" style="font-size:13px"></i>${id?'Actualizar':'Crear'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function guardarRec(id){
+  const nueva={id,titulo:document.getElementById('r-tit').value,tipo:document.getElementById('r-tipo').value,hora:document.getElementById('r-hora').value,lugar:document.getElementById('r-lugar').value,encargado:document.getElementById('r-enc').value,frecuencia:document.getElementById('r-freq').value,dia:document.getElementById('r-dia').value,activo:true};
+  if(!nueva.titulo){ alert('Ingresá el título'); return; }
+  const i=recurrentes.findIndex(r=>r.id===id);
+  if(i>=0) recurrentes[i]=nueva; else recurrentes.push(nueva);
+  guardarLocal(); cerrarModal(); renderRec(); actualizarStats(); toast('✅ Recurrente guardada');
+}
+function toggleRec(id,v){ const r=recurrentes.find(r=>r.id===id); if(r){ r.activo=v; guardarLocal(); actualizarStats(); } }
+function elimRec(id){ if(!confirm('¿Eliminar?')) return; recurrentes=recurrentes.filter(r=>r.id!==id); guardarLocal(); renderRec(); actualizarStats(); toast('Eliminada'); }
+
+// ── USUARIOS ──────────────────────────────────────────────────
+function renderUsuarios(){
+  const el=document.getElementById('lista-usuarios');
+  el.innerHTML=usuarios.map((u,i)=>{
+    const esAdmin=u.rol==='admin'; const nom=(u.grado?u.grado+' ':'')+u.nombre;
+    return `<div class="usr-item" style="opacity:${u.activo?1:.5}">
+      <div class="usr-avatar ${esAdmin?'usr-av-admin':'usr-av-asist'}">${u.nombre?u.nombre.charAt(0).toUpperCase():'+'}</div>
+      <div class="usr-info">
+        <div class="usr-nom">${u.nombre?nom:'Espacio disponible'}</div>
+        <div class="usr-det">${u.rol==='admin'?'Administrador':'Asistente'} · PIN: ${u.pin?'••••':'sin PIN'}</div>
+      </div>
+      <div class="usr-actions">
+        <span class="role-chip ${esAdmin?'role-admin':'role-asist'}">${esAdmin?'ADMIN':'ASIST'}</span>
+        <button onclick="abrirModalUsuario(${i})" style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);color:#93C5FD;border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer"><i class="ti ti-edit" style="font-size:11px"></i> Editar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function abrirModalUsuario(idx=null){
+  const u=idx!==null?{...usuarios[idx]}:{id:'u'+Date.now(),nombre:'',grado:'',rol:'asistente',pin:'',activo:true};
+  const esNuevo=idx===null;
+  document.getElementById('modal-container').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal">
+      <h3><i class="ti ti-user-plus" style="color:#3B82F6"></i>${esNuevo?'Nuevo usuario':'Editar usuario'}</h3>
+      <div class="fg2">
+        <div class="fr"><label>Grado</label><select id="u-grado">
+          <option value="" ${u.grado===''?'selected':''}>Sin grado</option>
+          <option ${u.grado==='GNRL'?'selected':''}>GNRL</option><option ${u.grado==='CRNL'?'selected':''}>CRNL</option>
+          <option ${u.grado==='TCNL'?'selected':''}>TCNL</option><option ${u.grado==='MAYR'?'selected':''}>MAYR</option>
+          <option ${u.grado==='CPTN'?'selected':''}>CPTN</option><option ${u.grado==='TNTE'?'selected':''}>TNTE</option>
+          <option ${u.grado==='SBTE'?'selected':''}>SBTE</option><option ${u.grado==='SBOS'?'selected':''}>SBOS</option>
+          <option ${u.grado==='SGOP'?'selected':''}>SGOP</option><option ${u.grado==='SGOS'?'selected':''}>SGOS</option>
+          <option ${u.grado==='CBOP'?'selected':''}>CBOP</option><option ${u.grado==='CBOS'?'selected':''}>CBOS</option>
+          <option ${u.grado==='POLI'?'selected':''}>POLI</option>
+        </select></div>
+        <div class="fr"><label>Rol</label><select id="u-rol"><option value="asistente" ${u.rol==='asistente'?'selected':''}>Asistente</option><option value="admin" ${u.rol==='admin'?'selected':''}>Administrador</option></select></div>
+      </div>
+      <div class="fr"><label>Nombre completo</label><input id="u-nombre" type="text" value="${u.nombre}" placeholder="Jonathan Cuasquer"/></div>
+      <div class="fr"><label>PIN (4 dígitos)</label><input id="u-pin" type="password" maxlength="4" value="${u.pin}" placeholder="••••" inputmode="numeric"/></div>
+      <div class="fr"><label>Estado</label><select id="u-activo"><option value="true" ${u.activo?'selected':''}>Activo</option><option value="false" ${!u.activo?'selected':''}>Inactivo</option></select></div>
+      <div class="m-btns">
+        <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-save" onclick="guardarUsuario(${idx},'${u.id}')"><i class="ti ti-check" style="font-size:13px"></i>Guardar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function guardarUsuario(idx,id){
+  const u={id,nombre:document.getElementById('u-nombre').value,grado:document.getElementById('u-grado').value,rol:document.getElementById('u-rol').value,pin:document.getElementById('u-pin').value,activo:document.getElementById('u-activo').value==='true'};
+  if(!u.nombre){ alert('Ingresá el nombre'); return; }
+  if(u.pin && u.pin.length!==4){ alert('El PIN debe tener 4 dígitos'); return; }
+  if(idx!==null) usuarios[idx]=u; else usuarios.push(u);
+  guardarLocal(); cerrarModal(); renderUsuarios(); initLogin(); toast('✅ Usuario guardado');
+}
+
+// ── GUARDAR EN SHEET ──────────────────────────────────────────
+async function guardarEnSheet(datos){
+  try{
+    const r=await fetch(WEBAPP,{method:'POST',body:JSON.stringify(datos)});
+    const j=await r.json();
+    if(j.ok){
+      toast('✅ Guardado · '+j.id);
+      mostrarPreview(datos,j.id);
+      reuniones.unshift({id:j.id,titulo:datos.titulo,fecha:datos.fecha,hora:datos.hora,tipo:datos.tipo,encargado:datos.encargado,lugar:datos.lugar,estado:'Programada'});
+      renderProximas(); renderCalendario(); actualizarStats();
+      if(j.contexto) contextoAprendizaje=j.contexto;
+    } else toast('Error: '+j.error,false);
+  }catch(e){ toast('Sin conexión',false); }
+}
+
+function mostrarPreview(d,id){
+  document.getElementById('preview-sheet').innerHTML=`
+  <div style="font-size:12px;font-family:var(--fm);color:#34D399;margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ti ti-circle-check"></i>Fila guardada en Sheets</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%">
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 7px"><div style="font-size:11px;color:#475569">ID</div><div style="font-size:12px;color:#34D399">${id}</div></div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 7px"><div style="font-size:11px;color:#475569">Tipo</div><div style="font-size:12px">${d.tipo}</div></div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 7px"><div style="font-size:11px;color:#475569">Fecha</div><div style="font-size:12px">${d.fecha}</div></div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 7px"><div style="font-size:11px;color:#475569">Hora</div><div style="font-size:12px">${d.hora}</div></div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 7px;grid-column:span 2"><div style="font-size:11px;color:#475569">Título</div><div style="font-size:12px">${d.titulo}</div></div>
+  </div>`;
+}
+
+// ── VOZ ───────────────────────────────────────────────────────
+let contextoAprendizaje=[];
+function toggleVoz(){_tv('btn-voz','input-txt','chat',false);}
+function toggleVoz2(){_tv('btn-mic2','input-txt2','chat2',true);}
+function _tv(btnId,inputId,chatId,mini){
+  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){_msg(chatId,'bot','Usá Chrome para voz.');return;}
+  if(grabando){recognition&&recognition.stop();return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition=new SR();recognition.lang='es-EC';recognition.continuous=false;recognition.interimResults=false;
+  recognition.onstart=()=>{grabando=true;document.getElementById(btnId).classList.add('grabando');if(!mini)document.getElementById('btn-voz').innerHTML='<i class="ti ti-microphone-off"></i> Escuchando...';setTab('ia');};
+  recognition.onresult=(e)=>{const txt=e.results[0][0].transcript;document.getElementById(inputId).value=txt;if(mini)setTimeout(enviar2,400);else{setTab('ia');setTimeout(enviar,400);}};
+  recognition.onerror=(ev)=>{grabando=false;document.getElementById(btnId).classList.remove('grabando');if(!mini)document.getElementById('btn-voz').innerHTML='<i class="ti ti-microphone"></i> Dictar';};
+  recognition.onend=()=>{grabando=false;document.getElementById(btnId).classList.remove('grabando');if(!mini)document.getElementById('btn-voz').innerHTML='<i class="ti ti-microphone"></i> Dictar';};
+  recognition.start();
+}
+function usarSugg(t){setTab('ia');document.getElementById('input-txt').value=t;enviar();}
+function usarSugg2(t){document.getElementById('input-txt2').value=t;enviar2();}
+function enviar(){const t=document.getElementById('input-txt').value.trim();if(!t)return;document.getElementById('input-txt').value='';_msg('chat','user',t);_typing('chat');setTimeout(()=>procesarIA(t,'chat'),700);}
+function enviar2(){const t=document.getElementById('input-txt2').value.trim();if(!t)return;document.getElementById('input-txt2').value='';_msg('chat2','user',t);_typing('chat2');setTimeout(()=>procesarIA(t,'chat2'),700);}
+function _msg(cid,tipo,html){const c=document.getElementById(cid);const d=document.createElement('div');if(tipo==='user'){d.className='burbuja user';d.textContent=html;}else if(tipo==='ok'){d.className='burbuja ok';d.innerHTML='<div class="bot-nom">Sistema</div>'+html;}else{d.className='burbuja bot';d.innerHTML='<div class="bot-nom">Asistente DINASED</div>'+html;}c.appendChild(d);c.scrollTop=c.scrollHeight;return d;}
+const tEls={};
+function _typing(cid){const c=document.getElementById(cid);const d=document.createElement('div');d.className='burbuja bot';d.innerHTML='<div class="bot-nom">Asistente DINASED</div><div class="typing"><span></span><span></span><span></span></div>';c.appendChild(d);c.scrollTop=c.scrollHeight;tEls[cid]=d;}
+function _qTyping(cid){if(tEls[cid]){tEls[cid].remove();delete tEls[cid];}}
+async function procesarIA(texto,cid){
+  const hoy=new Date().toISOString().split('T')[0];
+  const man=new Date(Date.now()+86400000).toISOString().split('T')[0];
+  const t=texto.toLowerCase();
+  let fecha=t.includes('mañana')||t.includes('manana')?man:hoy;
+  let hora='09:00';
+  const mh=texto.match(/(\d{1,2})[:h](\d{2})?/i);
+  if(mh)hora=mh[1].padStart(2,'0')+':'+(mh[2]||'00');
+  let tipo='Administrativa';
+  if(t.includes('urgente'))tipo='Urgente';
+  else if(t.includes('operativ')||t.includes('muerte')||t.includes('homicidio'))tipo='Operativa';
+  else if(t.includes('capacit'))tipo='Capacitación';
+  else if(t.includes('diligencia')||t.includes('fiscal'))tipo='Diligencia';
+  else if(t.includes('coordinaci'))tipo='Coordinación';
+  const mE=texto.match(/(GNRL|CRNL|TCNL|MAYR|CPTN|TNTE|SBTE|SBOS|SGOP|SGOS|CBOP|CBOS|POLI|General|Coronel|Mayor|Capitán|Teniente|Subteniente|Sargento|Cabo|Policía)[ .]+[A-Za-záéíóú]+/i);
+  const encargado=mE?mE[0]:'Por asignar';
+  const temas=['muertes violentas','homicidio','desaparecidos','extorsión','secuestro','evidencias','informe','trabajo','causas externas','digin'];
+  const tema=temas.find(tm=>t.includes(tm));
+  const titulo=tema?'Reunión — '+tema.charAt(0).toUpperCase()+tema.slice(1):'Reunión '+tipo;
+  const mL=texto.match(/sala\s+\w+/i);
+  const lugar=mL?mL[0]:t.includes('virtual')?'Virtual':t.includes('fiscal')?'Fiscalía':'Por confirmar';
+  datosActuales={titulo,fecha,hora,tipo,encargado,lugar,descripcion:texto,duracion_min:60,creadoPor:'Asistente IA'};
+  _qTyping(cid);
+  const col=({Urgente:'#EF4444',Operativa:'#3B82F6',Administrativa:'#10B981',Capacitación:'#F59E0B',Diligencia:'#8B5CF6',Coordinación:'#14B8A6'})[tipo]||'#3B82F6';
+  _msg(cid,'bot',`Entendido:<div class="cr"><div class="cr-hdr"><i class="ti ti-calendar-check"></i><span>${titulo}</span><span style="margin-left:auto;font-size:11px;padding:2px 5px;border-radius:3px;background:${col}22;color:${col}">${tipo}</span></div><div class="campo"><span class="campo-lbl">Fecha</span><span class="campo-val">${fecha}</span></div><div class="campo"><span class="campo-lbl">Hora</span><span class="campo-val">${hora}</span></div><div class="campo"><span class="campo-lbl">Encargado</span><span class="campo-val">${encargado}</span></div><div class="campo"><span class="campo-lbl">Lugar</span><span class="campo-val" id="cl" contenteditable="true" style="outline:none;border-bottom:1px dashed #334155">${lugar}</span></div><div class="cr-btns"><button class="btn-conf" onclick="confirmarReunion('${cid}')"><i class="ti ti-check" style="font-size:13px"></i>Confirmar</button><button class="btn-edit" onclick="_msg('${cid}','bot','Decime qué corregir.')">Corregir</button></div></div>`);
+}
+async function confirmarReunion(cid){
+  if(!datosActuales)return;
+  const cl=document.getElementById('cl');if(cl)datosActuales.lugar=cl.innerText;
+  _msg(cid,'ok','Guardando...');
+  await guardarEnSheet(datosActuales);datosActuales=null;
+  setTimeout(()=>_msg(cid,'bot','¿Necesitás agendar otra?'),500);
+}
+
+// ── UTILS FECHA ───────────────────────────────────────────────
+function parseFecha(f){if(!f)return null;if(f.includes('-')){const[y,m,d]=f.split('-').map(Number);return new Date(y,m-1,d);}if(f.includes('/')){const[d,m,y]=f.split('/').map(Number);return new Date(y,m-1,d);}return null;}
+function esMismaFecha(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+function formatCorta(f){const d=parseFecha(f);if(!d)return f;return d.toLocaleDateString('es-EC',{weekday:'short',day:'2-digit',month:'short'});}
+function formatLarga(f){const d=parseFecha(f);if(!d)return f;return d.toLocaleDateString('es-EC',{weekday:'long',day:'2-digit',month:'long'});}
+
+// ── INIT ──────────────────────────────────────────────────────
+cargarLocal();
+initLogin();
+</script>
+</body>
+</html>
