@@ -783,6 +783,7 @@ function renderProximas(){
   const el=document.getElementById('lista-proximas');
   const hoy=new Date(); hoy.setHours(0,0,0,0);
   let prox=reuniones.filter(r=>{ const f=parseFecha(r.fecha); if(!f) return false; const fTime=f.getTime(); const hoyTime=hoy.getTime(); return fTime>=hoyTime && r.estado!=='Finalizada'; })
+    .filter(r=>usuarioActual && usuarioActual.rol==='admin' ? true : esDeUsuario(r))
     .sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha)).slice(0,7);
   if(!prox.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center">Sin reuniones próximas</div>'; return; }
   el.innerHTML=prox.map(r=>{
@@ -808,7 +809,9 @@ function renderFallback(){
 function renderAgenda(){
   const el=document.getElementById('lista-agenda');
   const hoy=new Date(); hoy.setHours(0,0,0,0);
-  let lista=reuniones.filter(r=>{ const f=parseFecha(r.fecha); return f && f.getTime()>=hoy.getTime(); }).sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha));
+  let lista=reuniones.filter(r=>{ const f=parseFecha(r.fecha); return f && f.getTime()>=hoy.getTime(); })
+    .filter(r=>usuarioActual && usuarioActual.rol==='admin' ? true : esDeUsuario(r))
+    .sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha));
   if(!lista.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center">Sin reuniones próximas</div>'; return; }
   const grupos={};
   lista.forEach(r=>{ const k=r.fecha; if(!grupos[k]) grupos[k]=[]; grupos[k].push(r); });
@@ -832,7 +835,9 @@ function renderCalendario(){
   const hoy=new Date(); const year=hoy.getFullYear(), month=hoy.getMonth();
   const meses=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
   document.getElementById('cal-mes-lbl').textContent=meses[month]+' '+year;
-  const fechas={}; reuniones.forEach(r=>{ if(!fechas[r.fecha]) fechas[r.fecha]=CTIPO[r.tipo]||'#3B82F6'; });
+  const esAdmin=usuarioActual && usuarioActual.rol==='admin';
+  const reunionesVisibles=esAdmin?reuniones:reuniones.filter(r=>esDeUsuario(r));
+  const fechas={}; reunionesVisibles.forEach(r=>{ if(!fechas[r.fecha]) fechas[r.fecha]=CTIPO[r.tipo]||'#3B82F6'; });
   const primer=new Date(year,month,1).getDay(); const dias=new Date(year,month+1,0).getDate();
   const off=primer===0?6:primer-1;
   let h='<div class="cal-dh">L</div><div class="cal-dh">M</div><div class="cal-dh">X</div><div class="cal-dh">J</div><div class="cal-dh">V</div><div class="cal-dh">S</div><div class="cal-dh">D</div>';
@@ -848,8 +853,10 @@ function renderCalendario(){
 function actualizarStats(){
   const hoy=new Date(); hoy.setHours(0,0,0,0); const en7=new Date(hoy.getTime()+7*86400000);
   const mes=new Date().getMonth();
-  document.getElementById('st-total').textContent=reuniones.filter(r=>{const f=parseFecha(r.fecha);return f&&f.getMonth()===mes;}).length;
-  const prox=reuniones.filter(r=>{const f=parseFecha(r.fecha);return f&&f>=hoy&&f<=en7&&r.estado!=='Finalizada';});
+  const esAdmin=usuarioActual && usuarioActual.rol==='admin';
+  const reunionesVisibles=esAdmin?reuniones:reuniones.filter(r=>esDeUsuario(r));
+  document.getElementById('st-total').textContent=reunionesVisibles.filter(r=>{const f=parseFecha(r.fecha);return f&&f.getMonth()===mes;}).length;
+  const prox=reunionesVisibles.filter(r=>{const f=parseFecha(r.fecha);return f&&f>=hoy&&f<=en7&&r.estado!=='Finalizada';});
   document.getElementById('st-proximas').textContent=prox.length;
   const urg=prox.filter(r=>r.tipo==='Urgente').length;
   document.getElementById('st-urg').textContent=urg>0?urg+' urgentes':'';
