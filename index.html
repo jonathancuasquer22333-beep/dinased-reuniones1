@@ -701,26 +701,36 @@ const CTIPO={'Urgente':'#EF4444','Operativa':'#3B82F6','Administrativa':'#10B981
 const BTIPO={'Urgente':'b-ur','Operativa':'b-op','Administrativa':'b-ad','Capacitación':'b-ca','Diligencia':'b-di','Coordinación':'b-co','Finalizada':'b-fin'};
 
 // ── CARGAR REUNIONES ──────────────────────────────────────────
-async function cargarReuniones(){
-  try{
-    const r=await fetch(WEBAPP_READ+'?accion=reuniones');
-    if(r.ok){
-      const j=await r.json();
-      if(j.ok && j.reuniones){ reuniones=j.reuniones; renderProximas(); renderCalendario(); actualizarStats(); return; }
-    }
-  }catch(e){}
-  // JSONP fallback
-  const cb='cb'+Date.now();
-  window[cb]=d=>{
-    if(d.ok && d.reuniones){ reuniones=d.reuniones; renderProximas(); renderCalendario(); actualizarStats(); }
-    else renderFallback();
+function cargarReuniones(){
+  document.getElementById('lista-proximas').innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center"><i class="ti ti-loader"></i> Cargando reuniones...</div>';
+
+  const cb='dinasedCB'+Date.now();
+  const timeout=setTimeout(()=>{
+    if(window[cb]){ delete window[cb]; renderFallback(); }
+  }, 12000);
+
+  window[cb]=function(data){
+    clearTimeout(timeout);
     delete window[cb];
+    if(data && data.ok && data.reuniones){
+      // Filtrar fechas inválidas por si acaso
+      reuniones=data.reuniones.filter(r=>{
+        if(!r.fecha) return false;
+        if(r.fecha.includes('1969')||r.fecha.includes('1899')||r.fecha.includes('Dec')) return false;
+        return true;
+      });
+      renderProximas();
+      renderCalendario();
+      actualizarStats();
+    } else {
+      renderFallback();
+    }
   };
+
   const s=document.createElement('script');
-  s.src=WEBAPP_READ+'?accion=reuniones&callback='+cb;
-  s.onerror=()=>{ renderFallback(); delete window[cb]; };
+  s.src=WEBAPP_READ+'?accion=reuniones&callback='+cb+'&nocache='+Date.now();
+  s.onerror=function(){ clearTimeout(timeout); delete window[cb]; renderFallback(); };
   document.head.appendChild(s);
-  setTimeout(()=>{ if(window[cb]){ renderFallback(); delete window[cb]; } },8000);
 }
 
 function esDeUsuario(r){
@@ -742,7 +752,7 @@ function esDeUsuario(r){
 function renderProximas(){
   const el=document.getElementById('lista-proximas');
   const hoy=new Date(); hoy.setHours(0,0,0,0);
-  let prox=reuniones.filter(r=>{ const f=parseFecha(r.fecha); return f && f>=hoy && r.estado!=='Finalizada'; })
+  let prox=reuniones.filter(r=>{ const f=parseFecha(r.fecha); if(!f) return false; const fTime=f.getTime(); const hoyTime=hoy.getTime(); return fTime>=hoyTime && r.estado!=='Finalizada'; })
     .sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha)).slice(0,7);
   if(!prox.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center">Sin reuniones próximas</div>'; return; }
   el.innerHTML=prox.map(r=>{
@@ -768,7 +778,7 @@ function renderFallback(){
 function renderAgenda(){
   const el=document.getElementById('lista-agenda');
   const hoy=new Date(); hoy.setHours(0,0,0,0);
-  let lista=reuniones.filter(r=>parseFecha(r.fecha)>=hoy).sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha));
+  let lista=reuniones.filter(r=>{ const f=parseFecha(r.fecha); return f && f.getTime()>=hoy.getTime(); }).sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha));
   if(!lista.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:20px 0;text-align:center">Sin reuniones próximas</div>'; return; }
   const grupos={};
   lista.forEach(r=>{ const k=r.fecha; if(!grupos[k]) grupos[k]=[]; grupos[k].push(r); });
