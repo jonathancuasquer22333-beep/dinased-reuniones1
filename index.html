@@ -520,7 +520,9 @@ let grabando=false, recognition=null, datosActuales=null;
 
 // ── LOCAL STORAGE ─────────────────────────────────────────────
 function cargarLocal(){
-  try{ usuarios=JSON.parse(localStorage.getItem('din_usuarios')||'null')||USUARIOS_DEFAULT; }catch(e){ usuarios=USUARIOS_DEFAULT; }
+  // Los usuarios ya NO se cargan de localStorage — vienen del Sheet (ver cargarUsuariosDesdeSheet)
+  // Mientras carga desde el Sheet, usamos USUARIOS_DEFAULT como respaldo temporal
+  usuarios = USUARIOS_DEFAULT;
   try{ recurrentes=JSON.parse(localStorage.getItem('din_rec')||'[]'); }catch(e){ recurrentes=[]; }
   try{ actas=JSON.parse(localStorage.getItem('din_actas')||'[]'); }catch(e){ actas=[]; }
   try{ memoriaAsistentes=JSON.parse(localStorage.getItem('din_memoria')||'{}'); }catch(e){ memoriaAsistentes={}; }
@@ -533,10 +535,30 @@ function cargarLocal(){
   }
 }
 function guardarLocal(){
-  localStorage.setItem('din_usuarios',JSON.stringify(usuarios));
+  // usuarios ya no se guarda en localStorage, se guarda en el Sheet vía guardarUsuario()
   localStorage.setItem('din_rec',JSON.stringify(recurrentes));
   localStorage.setItem('din_actas',JSON.stringify(actas));
   localStorage.setItem('din_memoria',JSON.stringify(memoriaAsistentes));
+}
+
+// Carga la lista de usuarios real desde el Sheet (fuente central, funciona en cualquier dispositivo)
+async function cargarUsuariosDesdeSheet(){
+  return new Promise((resolve)=>{
+    const cb='usrCB'+Date.now();
+    const timeout=setTimeout(()=>{ if(window[cb]){ delete window[cb]; resolve(false); } }, 8000);
+    window[cb]=function(data){
+      clearTimeout(timeout);
+      delete window[cb];
+      if(data && data.ok && data.usuarios && data.usuarios.length>0){
+        usuarios=data.usuarios;
+      }
+      resolve(true);
+    };
+    const s=document.createElement('script');
+    s.src=WEBAPP_READ+'?accion=usuarios&callback='+cb+'&nocache='+Date.now();
+    s.onerror=function(){ clearTimeout(timeout); delete window[cb]; resolve(false); };
+    document.head.appendChild(s);
+  });
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────
@@ -620,7 +642,7 @@ function entrarAlSistema(){
   _msg('chat2','bot','Hola, '+usuarioActual.nombre+'. Dictame una reunión y la agendo.');
 }
 
-function cerrarSesion(){
+async function cerrarSesion(){
   if(!confirm('¿Cerrar sesión?')) return;
   localStorage.removeItem('din_sesion');
   usuarioActual=null; pinActual='';
@@ -629,6 +651,7 @@ function cerrarSesion(){
   document.getElementById('step2').classList.remove('activo');
   document.getElementById('step1').classList.add('activo');
   pinActual=''; actualizarPinDots();
+  await cargarUsuariosDesdeSheet();
   initLogin();
   setTab('dashboard');
 }
@@ -1169,7 +1192,7 @@ function abrirModalUsuario(idx=null){
   </div>`;
 }
 
-function guardarUsuario(idx,id){
+async function guardarUsuario(idx,id){
   const usuarioLogin=document.getElementById('u-usuario').value.trim().toLowerCase();
   const u={id,usuario:usuarioLogin,nombre:document.getElementById('u-nombre').value,grado:document.getElementById('u-grado').value,rol:document.getElementById('u-rol').value,pin:document.getElementById('u-pin').value,activo:document.getElementById('u-activo').value==='true'};
   if(!u.nombre){ alert('Ingresá el nombre'); return; }
@@ -1178,8 +1201,42 @@ function guardarUsuario(idx,id){
   // Verificar que el usuario no esté duplicado
   const duplicado=usuarios.find((x,i)=>x.usuario===u.usuario && i!==idx);
   if(duplicado){ alert('Ese usuario ya existe, elegí otro'); return; }
+  const esNuevo = idx===null;
   if(idx!==null) usuarios[idx]=u; else usuarios.push(u);
-  guardarLocal(); cerrarModal(); renderUsuarios(); initLogin(); toast('✅ Usuario guardado');
+  cerrarModal(); renderUsuarios(); initLogin();
+  toast('Guardando...');
+  // Guardar en el Sheet (fuente central — funciona en cualquier dispositivo)
+  try{
+    await fetch(WEBAPP,{
+      method:'POST',
+      body:JSON.stringify({ accionEspecial:'guardarUsuario', usuario:u })
+    });
+    toast('✅ Usuario guardado y sincronizado');
+  }catch(e){
+    toast('⚠️ Guardado local, pero no se pudo sincronizar con el Sheet',false);
+  }
+  // Sincronizar con la hoja PARTICIPANTES (solo si es nuevo, para Telegram)
+  if(esNuevo){
+    sincronizarParticipante(u);
+  }
+}
+
+// Envía el usuario nuevo al Apps Script para agregarlo a la hoja PARTICIPANTES
+async function sincronizarParticipante(u){
+  try{
+    const nombreCompleto=(u.grado?u.grado+' ':'')+u.nombre;
+    await fetch(WEBAPP,{
+      method:'POST',
+      body:JSON.stringify({
+        accionEspecial:'agregarParticipante',
+        nombre:nombreCompleto,
+        grado:u.grado||'',
+        rol:u.rol
+      })
+    });
+  }catch(e){
+    toast('⚠️ No se pudo sincronizar con Telegram/Sheet',false);
+  }
 }
 
 // ── GUARDAR EN SHEET ──────────────────────────────────────────
@@ -1273,8 +1330,14 @@ function formatCorta(f){const d=parseFecha(f);if(!d)return f;return d.toLocaleDa
 function formatLarga(f){const d=parseFecha(f);if(!d)return f;return d.toLocaleDateString('es-EC',{weekday:'long',day:'2-digit',month:'long'});}
 
 // ── INIT ──────────────────────────────────────────────────────
-cargarLocal();
-initLogin();
+async function iniciarApp(){
+  cargarLocal();
+  // Mostrar pantalla de login con loading mientras carga usuarios reales del Sheet
+  await cargarUsuariosDesdeSheet();
+  initLogin();
+}
+iniciarApp();
+
 </script>
 </body>
 </html>
