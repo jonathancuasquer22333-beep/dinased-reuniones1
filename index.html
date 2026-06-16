@@ -825,6 +825,7 @@ function renderProximas(){
     .filter(r=>usuarioActual && usuarioActual.rol==='admin' ? true : esDeUsuario(r))
     .sort((a,b)=>parseFecha(a.fecha)-parseFecha(b.fecha)).slice(0,7);
   if(!prox.length){ el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center">Sin reuniones próximas</div>'; return; }
+  const esAdmin=usuarioActual && usuarioActual.rol==='admin';
   el.innerHTML=prox.map(r=>{
     const col=CTIPO[r.tipo]||'#3B82F6'; const badge=BTIPO[r.tipo]||'b-ad';
     const fd=parseFecha(r.fecha); const esHoy=esMismaFecha(fd,new Date());
@@ -836,9 +837,25 @@ function renderProximas(){
         <div class="ri-meta">${esHoy?'<span style="color:#EF4444;font-weight:600">HOY</span> · ':''}${formatCorta(r.fecha)} · ${r.hora||''} · ${r.lugar||'—'}</div>
       </div>
       <span class="ri-badge ${badge}">${r.tipo}</span>
+      ${esAdmin?`<button class="btn-fin" style="background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#FCA5A5" onclick="notificarUrgente('${r.id}','${r.titulo.replace(/'/g,"\\'")}')" title="Notificar a todos AHORA por Telegram"><i class="ti ti-bell-ringing" style="font-size:11px"></i></button>`:''}
       <button class="btn-fin" ${!puedeFin?'disabled title="No eres el encargado"':''} onclick="${puedeFin?`abrirModalFin('${r.id}','${r.titulo.replace(/'/g,"\\'")}','${r.fecha}')`:''}" >Finalizar</button>
     </div>`;
   }).join('');
+}
+
+// Notifica urgentemente AHORA por Telegram, sin esperar las alertas automáticas de 72h/24h/1h
+async function notificarUrgente(reunionId, titulo){
+  if(!confirm(`¿Enviar notificación URGENTE ahora mismo por Telegram para "${titulo}"?\n\nSe avisará de inmediato a los administradores y al encargado.`)) return;
+  toast('Enviando notificación urgente...');
+  try{
+    await fetch(WEBAPP,{
+      method:'POST',
+      body:JSON.stringify({ accionEspecial:'notificarUrgente', reunionId })
+    });
+    toast('🚨 Notificación urgente enviada por Telegram');
+  }catch(e){
+    toast('⚠️ No se pudo enviar la notificación urgente',false);
+  }
 }
 
 function renderFallback(){
@@ -888,6 +905,7 @@ function renderAgenda(){
   const grupos={};
   lista.forEach(r=>{ const k=r.fecha; if(!grupos[k]) grupos[k]=[]; grupos[k].push(r); });
   const now=new Date(), man=new Date(now.getTime()+86400000);
+  const esAdmin=usuarioActual && usuarioActual.rol==='admin';
   el.innerHTML=Object.entries(grupos).map(([f,rs])=>{
     const fd=parseFecha(f);
     const etiq=esMismaFecha(fd,now)?'HOY':esMismaFecha(fd,man)?'MAÑANA':formatLarga(f);
@@ -897,6 +915,8 @@ function renderAgenda(){
         <div class="ri-barra" style="background:${col};height:30px"></div>
         <div class="ri-info"><div class="ri-tit">${r.titulo}</div><div class="ri-meta">${r.hora||''} · ${r.lugar||'—'} · ${r.encargado||''}</div></div>
         <span class="ri-badge ${fin?'b-fin':BTIPO[r.tipo]||'b-ad'}">${fin?'Finalizada':r.tipo}</span>
+        ${esAdmin&&!fin?`<button class="btn-fin" style="background:rgba(252,211,77,.12);border-color:rgba(252,211,77,.3);color:#FCD34D" onclick="abrirModalReprogramar('${r.id}','${r.titulo.replace(/'/g,"\\'")}','${r.fecha}','${r.hora}')" title="Reprogramar"><i class="ti ti-calendar-time" style="font-size:11px"></i></button>`:''}
+        ${esAdmin&&!fin?`<button class="btn-fin" style="background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#FCA5A5" onclick="notificarUrgente('${r.id}','${r.titulo.replace(/'/g,"\\'")}')" title="Notificar AHORA"><i class="ti ti-bell-ringing" style="font-size:11px"></i></button>`:''}
         ${puedeFin?`<button class="btn-fin" onclick="abrirModalFin('${r.id}','${r.titulo.replace(/'/g,"\\'")}','${r.fecha}')">Finalizar</button>`:''}
       </div>`;
     }).join('');
@@ -1233,6 +1253,85 @@ function abrirModalFin(id,titulo,fecha){
   </div>`;
 }
 
+// ── MODAL REPROGRAMAR (solo admin) — incluye historial de cambios previos ──
+async function abrirModalReprogramar(id,titulo,fechaActual,horaActual){
+  document.getElementById('modal-container').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal">
+      <h3><i class="ti ti-calendar-time" style="color:#FCD34D"></i>Reprogramar reunión</h3>
+      <div style="background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:6px;padding:8px 10px;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:600">${titulo}</div>
+        <div style="color:#64748B;font-size:11px;font-family:var(--fm)">Actual: ${fechaActual} · ${horaActual}</div>
+      </div>
+      <div id="historial-cambios" style="margin-bottom:10px">
+        <div style="color:#475569;font-size:11px;font-family:var(--fm);text-align:center;padding:6px"><i class="ti ti-loader"></i> Cargando historial...</div>
+      </div>
+      <div class="fg2">
+        <div class="fr"><label>Nueva fecha</label><input id="reprog-fecha" type="date" value="${fechaActual}"/></div>
+        <div class="fr"><label>Nueva hora</label><input id="reprog-hora" type="time" value="${horaActual}"/></div>
+      </div>
+      <div class="m-btns">
+        <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-save" onclick="guardarReprogramacion('${id}')"><i class="ti ti-check" style="font-size:13px"></i>Guardar cambio</button>
+      </div>
+    </div>
+  </div>`;
+  cargarHistorialReunion(id);
+}
+
+// Carga el historial de cambios de una reunión específica desde el Sheet
+async function cargarHistorialReunion(reunionId){
+  return new Promise((resolve)=>{
+    const cb='histCB'+Date.now();
+    const timeout=setTimeout(()=>{ if(window[cb]){ delete window[cb]; mostrarHistorialVacio(); resolve(false); } }, 8000);
+    window[cb]=function(data){
+      clearTimeout(timeout);
+      delete window[cb];
+      const el=document.getElementById('historial-cambios');
+      if(el){
+        if(data && data.ok && data.historial && data.historial.length>0){
+          el.innerHTML=`<div style="font-size:11px;color:#94A3B8;font-family:var(--fm);margin-bottom:5px"><i class="ti ti-history"></i> Historial de cambios:</div>`+
+            data.historial.map(h=>`<div style="background:rgba(255,255,255,.03);border-radius:5px;padding:5px 8px;margin-bottom:4px;font-size:11px;color:#CBD5E1">
+              ${h.fechaAnterior} ${h.horaAnterior} → <strong>${h.fechaNueva} ${h.horaNueva}</strong><br>
+              <span style="color:#64748B">por ${h.realizadoPor} · ${h.fechaCambio}</span>
+            </div>`).join('');
+        } else {
+          mostrarHistorialVacio();
+        }
+      }
+      resolve(true);
+    };
+    const s=document.createElement('script');
+    s.src=WEBAPP_READ+'?accion=historial&reunionId='+encodeURIComponent(reunionId)+'&callback='+cb+'&nocache='+Date.now();
+    s.onerror=function(){ clearTimeout(timeout); delete window[cb]; mostrarHistorialVacio(); resolve(false); };
+    document.head.appendChild(s);
+  });
+}
+
+function mostrarHistorialVacio(){
+  const el=document.getElementById('historial-cambios');
+  if(el) el.innerHTML='<div style="color:#475569;font-size:11px;font-family:var(--fm);text-align:center;padding:6px">Sin reprogramaciones anteriores</div>';
+}
+
+async function guardarReprogramacion(id){
+  const fechaNueva=document.getElementById('reprog-fecha').value;
+  const horaNueva=document.getElementById('reprog-hora').value;
+  if(!fechaNueva||!horaNueva){ alert('Completá fecha y hora'); return; }
+  cerrarModal();
+  toast('Guardando reprogramación...');
+  const realizadoPor=(usuarioActual.grado?usuarioActual.grado+' ':'')+usuarioActual.nombre;
+  try{
+    await fetch(WEBAPP,{
+      method:'POST',
+      body:JSON.stringify({ accionEspecial:'reprogramarReunion', reunionId:id, fechaNueva, horaNueva, realizadoPor })
+    });
+    toast('✅ Reunión reprogramada');
+    cargarReuniones();
+  }catch(e){
+    toast('⚠️ No se pudo reprogramar',false);
+  }
+}
+
 async function finalizarReunion(id,titulo,fecha){
   const asist=document.getElementById('fin-asist').value;
   const temas=document.getElementById('fin-temas').value;
@@ -1531,9 +1630,19 @@ const tEls={};
 function _typing(cid){const c=document.getElementById(cid);const d=document.createElement('div');d.className='burbuja bot';d.innerHTML='<div class="bot-nom">Asistente DINASED</div><div class="typing"><span></span><span></span><span></span></div>';c.appendChild(d);c.scrollTop=c.scrollHeight;tEls[cid]=d;}
 function _qTyping(cid){if(tEls[cid]){tEls[cid].remove();delete tEls[cid];}}
 async function procesarIA(texto,cid){
+  const t=texto.toLowerCase();
+
+  // ── Detectar si es una PREGUNTA sobre historial, en vez de una solicitud de agendar ──
+  const esPregunta = /quien|quién|sabes si|alguien fue|fue a la reunion|fue a la reunión|me puedes decir|que paso|qué pasó|hubo reunion|hubo reunión|se trato|se trató|acuerdos de|temas de|cuando fue|cuándo fue/i.test(t);
+
+  if(esPregunta){
+    _qTyping(cid);
+    setTimeout(()=>responderPreguntaHistorial(texto,cid), 600);
+    return;
+  }
+
   const hoy=new Date().toISOString().split('T')[0];
   const man=new Date(Date.now()+86400000).toISOString().split('T')[0];
-  const t=texto.toLowerCase();
   let fecha=t.includes('mañana')||t.includes('manana')?man:hoy;
   let hora='09:00';
   const mh=texto.match(/(\d{1,2})[:h](\d{2})?/i);
@@ -1555,6 +1664,68 @@ async function procesarIA(texto,cid){
   _qTyping(cid);
   const col=({Urgente:'#EF4444',Operativa:'#3B82F6',Administrativa:'#10B981',Capacitación:'#F59E0B',Diligencia:'#8B5CF6',Coordinación:'#14B8A6'})[tipo]||'#3B82F6';
   _msg(cid,'bot',`Entendido:<div class="cr"><div class="cr-hdr"><i class="ti ti-calendar-check"></i><span>${titulo}</span><span style="margin-left:auto;font-size:11px;padding:2px 5px;border-radius:3px;background:${col}22;color:${col}">${tipo}</span></div><div class="campo"><span class="campo-lbl">Fecha</span><span class="campo-val">${fecha}</span></div><div class="campo"><span class="campo-lbl">Hora</span><span class="campo-val">${hora}</span></div><div class="campo"><span class="campo-lbl">Encargado</span><span class="campo-val">${encargado}</span></div><div class="campo"><span class="campo-lbl">Lugar</span><span class="campo-val" id="cl" contenteditable="true" style="outline:none;border-bottom:1px dashed #334155">${lugar}</span></div><div class="cr-btns"><button class="btn-conf" onclick="confirmarReunion('${cid}')"><i class="ti ti-check" style="font-size:13px"></i>Confirmar</button><button class="btn-edit" onclick="_msg('${cid}','bot','Decime qué corregir.')">Corregir</button></div></div>`);
+}
+
+// ── Responde preguntas sobre el historial de reuniones/actas usando los datos reales ──
+function responderPreguntaHistorial(texto,cid){
+  const t=texto.toLowerCase();
+
+  // Extraer una fecha específica si la mencionan (formato dd/mm/yyyy o yyyy-mm-dd)
+  let fechaBuscada=null;
+  const mFechaSlash=texto.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const mFechaGuion=texto.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(mFechaSlash){
+    fechaBuscada=`${mFechaSlash[3]}-${mFechaSlash[2].padStart(2,'0')}-${mFechaSlash[1].padStart(2,'0')}`;
+  } else if(mFechaGuion){
+    fechaBuscada=`${mFechaGuion[1]}-${mFechaGuion[2].padStart(2,'0')}-${mFechaGuion[3].padStart(2,'0')}`;
+  }
+
+  // Extraer palabras clave del tema (ignorar palabras de pregunta comunes)
+  const stopwords=['quien','quién','sabes','alguien','fue','la','reunion','reunión','del','de','tema','que','qué','paso','pasó','me','puedes','decir','si','el','los','las','un','una','con','para','por','en'];
+  const palabrasClave=normTema(texto).split(' ').filter(p=>p.length>3 && !stopwords.includes(p));
+
+  // Buscar candidatas: por fecha exacta si se mencionó, y/o por coincidencia de palabras clave en el título
+  let candidatas=reuniones.filter(r=>{
+    if(fechaBuscada) return r.fecha===fechaBuscada;
+    const palabrasR=normTema(r.titulo).split(' ');
+    return palabrasClave.some(p=>palabrasR.includes(p));
+  });
+
+  // Si buscó por fecha y además dio tema, refinar
+  if(fechaBuscada && palabrasClave.length>0){
+    const refinada=candidatas.filter(r=>{
+      const palabrasR=normTema(r.titulo).split(' ');
+      return palabrasClave.some(p=>palabrasR.includes(p));
+    });
+    if(refinada.length>0) candidatas=refinada;
+  }
+
+  if(candidatas.length===0){
+    _msg(cid,'bot',`No encontré ninguna reunión que coincida con esa búsqueda. Revisá la fecha o el tema mencionado.`);
+    return;
+  }
+
+  // Tomar la más relevante (más reciente si hay varias)
+  candidatas.sort((a,b)=>parseFecha(b.fecha)-parseFecha(a.fecha));
+  const r=candidatas[0];
+  const acta=actas.find(a=>a.reunionId===r.id);
+
+  if(acta){
+    _msg(cid,'bot',
+      `📋 <strong>${r.titulo}</strong> · ${formatLarga(r.fecha)}<br><br>`+
+      `👥 <strong>Asistentes:</strong> ${acta.asistentes}<br>`+
+      `📝 <strong>Temas tratados:</strong> ${acta.temas}<br>`+
+      (acta.acuerdos?`✅ <strong>Acuerdos:</strong> ${acta.acuerdos}<br>`:'')+
+      (acta.proxFecha?`📅 <strong>Próxima reunión sugerida:</strong> ${formatLarga(acta.proxFecha)}`:'')
+    );
+  } else {
+    const fin=r.estado==='Finalizada';
+    _msg(cid,'bot',
+      `📋 <strong>${r.titulo}</strong> está agendada para ${formatLarga(r.fecha)} a las ${r.hora||''}, en ${r.lugar||'lugar por confirmar'}.<br><br>`+
+      `👤 Encargado: ${r.encargado||'Por asignar'}<br>`+
+      (fin?`Esta reunión está marcada como Finalizada pero no tiene acta detallada registrada.`:`Aún no se ha finalizado ni registrado acta de esta reunión.`)
+    );
+  }
 }
 async function confirmarReunion(cid){
   if(!datosActuales)return;
