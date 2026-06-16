@@ -497,9 +497,21 @@ const WEBAPP_READ='https://script.google.com/macros/s/AKfycbytIU1aXiwuXLDMksycT_
 const USUARIOS_DEFAULT=[
   {id:'u1',nombre:'Administrador DINASED',grado:'',rol:'admin',pin:'1234',activo:true},
   {id:'u2',nombre:'Jonathan Cuasquer',grado:'SBTE',rol:'asistente',pin:'5678',activo:true},
-  {id:'u3',nombre:'',grado:'',rol:'asistente',pin:'',activo:false},
-  {id:'u4',nombre:'',grado:'',rol:'asistente',pin:'',activo:false},
-  {id:'u5',nombre:'',grado:'',rol:'asistente',pin:'',activo:false},
+  {id:'u3',nombre:'Mantilla Gallardo Luis Eduardo',grado:'CRNL',rol:'asistente',pin:'',activo:true},
+  {id:'u4',nombre:'Barrera Jaramillo Jairo Nicolay',grado:'TCNL',rol:'asistente',pin:'',activo:true},
+  {id:'u5',nombre:'Puebla Viteri Oscar Vladimir',grado:'MAYR',rol:'asistente',pin:'',activo:true},
+  {id:'u6',nombre:'Lopez Moya Ricardo Vladimir',grado:'MAYR',rol:'asistente',pin:'',activo:true},
+  {id:'u7',nombre:'Fonseca Rivera Rodrigo Andres',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u8',nombre:'Manjarrez Guerrero Susana',grado:'TCNL',rol:'asistente',pin:'',activo:true},
+  {id:'u9',nombre:'Maruri Jativa Jorge Luis',grado:'MAYR',rol:'asistente',pin:'',activo:true},
+  {id:'u10',nombre:'Amores Reyes Cristhian Fernando',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u11',nombre:'Vasquez Rivera Ana Licette',grado:'TNTE',rol:'asistente',pin:'',activo:true},
+  {id:'u12',nombre:'Recalde Buitron Betty Marisela',grado:'TNTE',rol:'asistente',pin:'',activo:true},
+  {id:'u13',nombre:'Coyago Coyago Mayra Alexandra',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u14',nombre:'Tabango Ruiz Jorge Alfredo',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u15',nombre:'Gagnay Munoz Diana Carolina',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u16',nombre:'Norona Martinez Ana Aracely',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u17',nombre:'Flores Silva Danny Fernando',grado:'CPTN',rol:'asistente',pin:'',activo:true},
 ];
 
 // ── ESTADO ────────────────────────────────────────────────────
@@ -713,10 +725,18 @@ async function cargarReuniones(){
 
 function esDeUsuario(r){
   if(!usuarioActual || usuarioActual.rol==='admin') return true;
-  const enc=(r.encargado||'').toLowerCase();
-  const nom=usuarioActual.nombre.toLowerCase();
-  const grado=(usuarioActual.grado||'').toLowerCase();
-  return enc.includes(nom) || enc.includes(grado+' '+nom.split(' ')[0]) || nom.includes(enc.split(' ').pop());
+  const nombre=usuarioActual.nombre.toLowerCase().trim();
+  const grado=(usuarioActual.grado||'').toLowerCase().trim();
+  const apellido=nombre.split(' ').pop(); // apellido = última palabra
+  const nombreCompleto=(grado+' '+nombre).trim();
+  // El campo encargado puede tener múltiples personas separadas por coma
+  const listaEnc=(r.encargado||'').toLowerCase().split(',').map(e=>e.trim());
+  return listaEnc.some(enc=>
+    enc.includes(apellido) ||
+    enc.includes(nombre) ||
+    enc.includes(nombreCompleto) ||
+    nombreCompleto.includes(enc.split(' ').pop())
+  );
 }
 
 function renderProximas(){
@@ -801,30 +821,42 @@ function actualizarStats(){
 function abrirModal(){
   if(usuarioActual?.rol!=='admin'){ toast('Solo el administrador puede crear reuniones',false); return; }
   const hoy=new Date().toISOString().split('T')[0];
+  // Generar checkboxes de asistentes
+  const asistentes=usuarios.filter(u=>u.activo&&u.nombre&&u.rol==='asistente');
+  const checksHTML=asistentes.map(u=>{
+    const nom=(u.grado?u.grado+' ':'')+u.nombre;
+    return `<div class="nc" style="margin-bottom:5px">
+      <input type="checkbox" class="chk-asist" value="${nom}" id="chk-${u.id}" onchange="verificarConflictos()">
+      <label for="chk-${u.id}" style="font-size:12px;cursor:pointer">${nom}</label>
+    </div>`;
+  }).join('');
   document.getElementById('modal-container').innerHTML=`
   <div class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
     <div class="modal">
       <h3><i class="ti ti-calendar-plus" style="color:#3B82F6"></i>Nueva reunión</h3>
       <div id="sugg-asist"></div>
       <div class="fr"><label>Título / Tema</label><input id="m-titulo" type="text" placeholder="Ej: Muertes por causas externas DIGIN" oninput="chkMemoria(this.value)"/></div>
-      <div class="fg2"><div class="fr"><label>Fecha</label><input id="m-fecha" type="date" value="${hoy}"/></div><div class="fr"><label>Hora</label><input id="m-hora" type="time" value="09:00"/></div></div>
+      <div class="fg2"><div class="fr"><label>Fecha</label><input id="m-fecha" type="date" value="${hoy}" onchange="verificarConflictos()"/></div><div class="fr"><label>Hora</label><input id="m-hora" type="time" value="09:00" onchange="verificarConflictos()"/></div></div>
       <div class="fg2"><div class="fr"><label>Tipo</label><select id="m-tipo"><option>Operativa</option><option>Administrativa</option><option>Capacitación</option><option>Urgente</option><option>Diligencia</option><option>Coordinación</option></select></div><div class="fr"><label>Lugar</label><input id="m-lugar" type="text" placeholder="Sala DAI..."/></div></div>
-      <div class="fr"><label>Encargado / Asistente a enviar</label>
-        <select id="m-encargado-sel" onchange="syncEncargado(this.value)">
-          <option value="">— Seleccionar usuario —</option>
-          ${usuarios.filter(u=>u.activo&&u.nombre&&u.rol==='asistente').map(u=>`<option value="${(u.grado?u.grado+' ':'')+u.nombre}">${(u.grado?u.grado+' ':'')+u.nombre}</option>`).join('')}
-          <option value="__otro">Otro (escribir)</option>
-        </select>
-        <input id="m-encargado" type="text" placeholder="O escribí manualmente..." style="margin-top:5px"/>
+      <div class="fr">
+        <label>Asistentes a enviar <span style="color:#64748B;font-weight:400">(seleccioná uno o varios)</span></label>
+        <div class="ng" style="max-height:160px;overflow-y:auto">
+          ${checksHTML}
+          <div style="border-top:1px solid rgba(255,255,255,.06);margin-top:5px;padding-top:5px">
+            <div class="nc"><input type="checkbox" id="chk-otro" onchange="document.getElementById('m-otro').style.display=this.checked?'block':'none'"><label for="chk-otro" style="font-size:12px">Otro (escribir)</label></div>
+            <input id="m-otro" type="text" placeholder="Nombre del asistente..." style="display:none;margin-top:5px;width:100%;padding:5px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:5px;font-size:12px;color:#fff;font-family:var(--fb);outline:none"/>
+          </div>
+        </div>
+        <div id="alerta-conflicto" style="display:none;margin-top:6px;padding:6px 8px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:5px;font-size:11px;color:#FCA5A5;font-family:var(--fm)"></div>
       </div>
       <div class="fr"><label>Descripción</label><textarea id="m-desc" placeholder="Agenda de la reunión..."></textarea></div>
       <div class="fr"><label>Alertas</label><div class="ng">
-        <div class="nc"><input type="checkbox" checked id="n72"><label for="n72">72h antes</label></div>
-        <div class="nc"><input type="checkbox" checked id="n24"><label for="n24">24h antes</label></div>
-        <div class="nc"><input type="checkbox" checked id="n1"><label for="n1">1h antes</label></div>
+        <div class="nc"><input type="checkbox" checked id="n72"><label for="n72" style="font-size:12px">72h antes</label></div>
+        <div class="nc"><input type="checkbox" checked id="n24"><label for="n24" style="font-size:12px">24h antes</label></div>
+        <div class="nc"><input type="checkbox" checked id="n1"><label for="n1" style="font-size:12px">1h antes</label></div>
         <div style="border-top:1px solid rgba(255,255,255,.06);margin-top:5px;padding-top:5px">
-          <div class="nc"><input type="checkbox" checked><label><i class="ti ti-brand-telegram" style="font-size:13px;margin-right:2px"></i>Telegram</label></div>
-          <div class="nc"><input type="checkbox" checked><label><i class="ti ti-mail" style="font-size:13px;margin-right:2px"></i>Gmail</label></div>
+          <div class="nc"><input type="checkbox" checked><label style="font-size:12px"><i class="ti ti-brand-telegram" style="font-size:12px;margin-right:2px"></i>Telegram</label></div>
+          <div class="nc"><input type="checkbox" checked><label style="font-size:12px"><i class="ti ti-mail" style="font-size:12px;margin-right:2px"></i>Gmail</label></div>
         </div>
       </div></div>
       <div class="m-btns">
@@ -835,9 +867,36 @@ function abrirModal(){
   </div>`;
 }
 
-function syncEncargado(v){
-  if(v && v!=='__otro') document.getElementById('m-encargado').value=v;
-  else if(v==='__otro') document.getElementById('m-encargado').value='';
+// Verificar conflictos de horario al seleccionar fecha/hora/asistentes
+function verificarConflictos(){
+  const fecha=document.getElementById('m-fecha')?.value;
+  const hora=document.getElementById('m-hora')?.value;
+  const alertEl=document.getElementById('alerta-conflicto');
+  if(!fecha || !hora || !alertEl) return;
+  const checks=[...document.querySelectorAll('.chk-asist:checked')].map(c=>c.value);
+  if(checks.length===0){ alertEl.style.display='none'; return; }
+  const conflictos=[];
+  checks.forEach(asist=>{
+    const tienConflicto=reuniones.some(r=>{
+      if(r.estado==='Finalizada') return false;
+      if(r.fecha!==fecha) return false;
+      // Comparar hora (tolerancia 1h)
+      const h1=parseInt((r.hora||'00:00').split(':')[0]);
+      const h2=parseInt(hora.split(':')[0]);
+      if(Math.abs(h1-h2)>1) return false;
+      // Verificar si este asistente está en esa reunión
+      const enc=(r.encargado||'').toLowerCase();
+      const apellido=asist.split(' ').pop().toLowerCase();
+      return enc.includes(apellido);
+    });
+    if(tienConflicto) conflictos.push(asist);
+  });
+  if(conflictos.length>0){
+    alertEl.style.display='block';
+    alertEl.innerHTML='⚠️ Conflicto de horario detectado:<br>'+conflictos.map(c=>'• '+c).join('<br>');
+  } else {
+    alertEl.style.display='none';
+  }
 }
 
 function chkMemoria(titulo){
@@ -855,7 +914,34 @@ function cerrarModal(){ document.getElementById('modal-container').innerHTML='';
 async function guardarDesdeModal(){
   const titulo=document.getElementById('m-titulo').value;
   if(!titulo){ alert('Ingresá el título'); return; }
-  const datos={titulo,fecha:document.getElementById('m-fecha').value,hora:document.getElementById('m-hora').value,tipo:document.getElementById('m-tipo').value,lugar:document.getElementById('m-lugar').value,encargado:document.getElementById('m-encargado').value,descripcion:document.getElementById('m-desc').value,creadoPor:'Admin — Interfaz Web'};
+  // Recoger asistentes seleccionados
+  const checks=[...document.querySelectorAll('.chk-asist:checked')].map(c=>c.value);
+  const otro=document.getElementById('m-otro')?.value?.trim();
+  if(otro && document.getElementById('chk-otro')?.checked) checks.push(otro);
+  if(checks.length===0){ alert('Seleccioná al menos un asistente'); return; }
+  // Verificar conflictos antes de guardar
+  const fecha=document.getElementById('m-fecha').value;
+  const hora=document.getElementById('m-hora').value;
+  const conflictos=[];
+  checks.forEach(asist=>{
+    const tienConflicto=reuniones.some(r=>{
+      if(r.estado==='Finalizada') return false;
+      if(r.fecha!==fecha) return false;
+      const h1=parseInt((r.hora||'00:00').split(':')[0]);
+      const h2=parseInt(hora.split(':')[0]);
+      if(Math.abs(h1-h2)>1) return false;
+      const enc=(r.encargado||'').toLowerCase();
+      const apellido=asist.split(' ').pop().toLowerCase();
+      return enc.includes(apellido);
+    });
+    if(tienConflicto) conflictos.push(asist);
+  });
+  if(conflictos.length>0){
+    const ok=confirm('⚠️ CONFLICTO DE HORARIO\n\nLas siguientes personas ya tienen otra reunión en esa fecha/hora:\n'+conflictos.map(c=>'• '+c).join('\n')+'\n\n¿Deseas continuar de todas formas?');
+    if(!ok) return;
+  }
+  const encargado=checks.join(', ');
+  const datos={titulo,fecha,hora,tipo:document.getElementById('m-tipo').value,lugar:document.getElementById('m-lugar').value,encargado,descripcion:document.getElementById('m-desc').value,creadoPor:'Admin — Interfaz Web'};
   cerrarModal(); toast('Guardando...');
   await guardarEnSheet(datos);
 }
