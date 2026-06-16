@@ -953,27 +953,37 @@ function renderCargaTrabajo(){
   const mesActual=new Date().getMonth();
   const anioActual=new Date().getFullYear();
 
-  // Reuniones del mes actual, sin contar finalizadas como "carga futura" pero sí contarlas en el total
+  // Reuniones del mes actual
   const reunionesDelMes=reuniones.filter(r=>{
     const f=parseFecha(r.fecha);
     return f && f.getMonth()===mesActual && f.getFullYear()===anioActual;
   });
 
-  // Contar por persona (un encargado puede tener varias personas separadas por coma)
+  // Lista de usuarios reales activos (asistentes) — solo contamos carga de gente registrada en el sistema
+  const asistentesReales=usuarios.filter(u=>u.activo && u.nombre);
+
+  // Por cada usuario real, buscar coincidencias en el campo encargado de cada reunión (por apellido)
   const conteo={};
-  reunionesDelMes.forEach(r=>{
-    const encargados=(r.encargado||'').split(',').map(e=>e.trim()).filter(Boolean);
-    encargados.forEach(enc=>{
-      if(!conteo[enc]) conteo[enc]={total:0, finalizadas:0, pendientes:0};
-      conteo[enc].total++;
-      if(r.estado==='Finalizada') conteo[enc].finalizadas++; else conteo[enc].pendientes++;
+  asistentesReales.forEach(u=>{
+    const apellido=normTema(u.nombre).split(' ').pop();
+    const nombreFormal=(u.grado?u.grado+' ':'')+u.nombre;
+    let total=0, finalizadas=0;
+    reunionesDelMes.forEach(r=>{
+      const encargados=(r.encargado||'').toLowerCase();
+      if(apellido && encargados.includes(apellido)){
+        total++;
+        if(r.estado==='Finalizada') finalizadas++;
+      }
     });
+    if(total>0){
+      conteo[nombreFormal]={total, finalizadas, pendientes:total-finalizadas};
+    }
   });
 
   const entradas=Object.entries(conteo).sort((a,b)=>b[1].total-a[1].total);
 
   if(entradas.length===0){
-    el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center">Sin reuniones asignadas este mes</div>';
+    el.innerHTML='<div style="color:#475569;font-size:12px;font-family:var(--fm);padding:10px 0;text-align:center">Sin reuniones asignadas este mes a usuarios registrados</div>';
     return;
   }
 
