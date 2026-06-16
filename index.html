@@ -951,42 +951,67 @@ function chkMemoria(titulo){
   if(titulo.length<5){ el.innerHTML=''; return; }
 
   const palabrasTitulo=normTema(titulo).split(' ').filter(p=>p.length>3);
-  let mejorCoincidencia=null, mejorPuntaje=0, mejorTituloOriginal='';
 
-  // Buscar en el historial de memoria por similitud de palabras clave, no coincidencia exacta
-  Object.keys(memoriaAsistentes).forEach(key=>{
-    const palabrasKey=key.split(' ').filter(p=>p.length>3);
-    let puntaje=0;
-    palabrasTitulo.forEach(p=>{ if(palabrasKey.includes(p)) puntaje++; });
-    if(puntaje>mejorPuntaje){
-      mejorPuntaje=puntaje;
-      mejorCoincidencia=memoriaAsistentes[key];
-    }
+  // Buscar TODAS las reuniones (finalizadas o no) con palabras clave similares
+  const candidatas=reuniones.map(r=>{
+    const palabrasR=normTema(r.titulo).split(' ').filter(p=>p.length>3);
+    const coincidencias=palabrasTitulo.filter(p=>palabrasR.includes(p)).length;
+    return {reunion:r, puntaje:coincidencias};
+  }).filter(c=>c.puntaje>0).sort((a,b)=>b.puntaje-a.puntaje || parseFecha(b.reunion.fecha)-parseFecha(a.reunion.fecha));
+
+  if(candidatas.length===0){ el.innerHTML=''; return; }
+
+  // Agrupar por persona (encargado) — tomar la coincidencia más relevante de cada persona
+  const porPersona={};
+  candidatas.forEach(c=>{
+    const encargados=(c.reunion.encargado||'').split(',').map(e=>e.trim()).filter(Boolean);
+    encargados.forEach(enc=>{
+      if(!porPersona[enc] || parseFecha(c.reunion.fecha)>parseFecha(porPersona[enc].reunion.fecha)){
+        porPersona[enc]=c;
+      }
+    });
   });
 
-  // También buscar directamente en reuniones pasadas con temas similares (encargados que ya trataron este tipo de caso)
-  if(!mejorCoincidencia || mejorPuntaje===0){
-    const reunionesSimilares=reuniones.filter(r=>{
-      const palabrasR=normTema(r.titulo).split(' ').filter(p=>p.length>3);
-      const coincidencias=palabrasTitulo.filter(p=>palabrasR.includes(p)).length;
-      return coincidencias>=1;
-    });
-    if(reunionesSimilares.length>0){
-      // Tomar el encargado de la reunión más reciente con tema similar
-      reunionesSimilares.sort((a,b)=>parseFecha(b.fecha)-parseFecha(a.fecha));
-      const encargados=reunionesSimilares[0].encargado;
-      if(encargados){
-        mejorCoincidencia=encargados.split(',').map(e=>e.trim());
-        mejorPuntaje=1;
-      }
-    }
-  }
+  const personas=Object.keys(porPersona);
+  if(personas.length===0){ el.innerHTML=''; return; }
 
-  if(mejorCoincidencia && mejorCoincidencia.length>0 && mejorPuntaje>0){
-    el.innerHTML=`<div class="asist-sugg"><i class="ti ti-star"></i><div><div style="font-weight:600;margin-bottom:2px">Sugerido por historial (ya conoce el tema):</div><div>${mejorCoincidencia.join(', ')}</div><div style="margin-top:3px;color:#94A3B8;font-size:11px">Asistió a un caso similar: <span style="cursor:pointer;color:#FCD34D;text-decoration:underline" onclick="marcarCheckSugerido('${mejorCoincidencia[0]}')">marcar a ${mejorCoincidencia[0]}</span></div></div></div>`;
-  } else {
-    el.innerHTML='';
-  }
+  el.innerHTML=`<div class="asist-sugg" style="flex-direction:column;align-items:stretch;gap:6px">
+    <div style="display:flex;align-items:center;gap:6px"><i class="ti ti-star"></i><span style="font-weight:600">Ya conocen este tema:</span></div>
+    ${personas.map(p=>{
+      const c=porPersona[p]; const r=c.reunion; const fin=r.estado==='Finalizada';
+      const fechaFmt=formatCorta(r.fecha);
+      if(fin){
+        return `<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);padding:6px 8px;border-radius:5px">
+          <div><span style="cursor:pointer;color:#FCD34D" onclick="marcarCheckSugerido('${p}')">${p}</span> <span style="color:#94A3B8;font-size:11px">— asistió el ${fechaFmt}</span></div>
+          <button onclick="verActaDeReunion('${r.id}')" style="background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);color:#93C5FD;border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer">Ver acta</button>
+        </div>`;
+      } else {
+        return `<div style="background:rgba(255,255,255,.04);padding:6px 8px;border-radius:5px">
+          <span style="cursor:pointer;color:#FCD34D" onclick="marcarCheckSugerido('${p}')">${p}</span> <span style="color:#94A3B8;font-size:11px">— tiene "${r.titulo}" agendada el ${fechaFmt}, aún sin finalizar</span>
+        </div>`;
+      }
+    }).join('')}
+  </div>`;
+}
+
+// Muestra el acta de una reunión específica en un modal de solo lectura
+function verActaDeReunion(reunionId){
+  const acta=actas.find(a=>a.reunionId===reunionId);
+  if(!acta){ toast('No se encontró el acta de esta reunión',false); return; }
+  document.getElementById('modal-container').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal">
+      <h3><i class="ti ti-file-check" style="color:#22C55E"></i>Acta: ${acta.titulo}</h3>
+      <div style="font-size:12px;color:#94A3B8;margin-bottom:10px">${formatLarga(acta.fecha)} · Registrado por ${acta.registradoPor}</div>
+      <div class="fr"><label>Asistentes</label><div style="font-size:13px;color:#E2E8F0;padding:6px 0">${acta.asistentes}</div></div>
+      <div class="fr"><label>Temas tratados</label><div style="font-size:13px;color:#E2E8F0;padding:6px 0;white-space:pre-line">${acta.temas}</div></div>
+      ${acta.acuerdos?`<div class="fr"><label>Acuerdos / Compromisos</label><div style="font-size:13px;color:#E2E8F0;padding:6px 0;white-space:pre-line">${acta.acuerdos}</div></div>`:''}
+      ${acta.proxFecha?`<div class="fr"><label>Próxima reunión sugerida</label><div style="font-size:13px;color:#FCD34D;padding:6px 0">${formatLarga(acta.proxFecha)}</div></div>`:''}
+      <div class="m-btns">
+        <button class="btn-cancel" onclick="cerrarModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>`;
 }
 
 // Marca automáticamente el checkbox del asistente sugerido, si existe en la lista
