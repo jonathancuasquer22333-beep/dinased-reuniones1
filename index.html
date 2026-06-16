@@ -260,12 +260,10 @@ html,body{width:100%;background:var(--azul);color:#fff;font-family:var(--fb);ove
     <div class="login-title">DINASED</div>
     <div class="login-sub">Sistema de Reuniones v2.0 · Acceso seguro</div>
 
-    <!-- PASO 1: seleccionar usuario -->
+    <!-- PASO 1: ingresar usuario -->
     <div class="login-step activo" id="step1">
-      <div style="font-size:12px;color:#64748B;font-family:var(--fm);margin-bottom:10px">Seleccioná tu nombre</div>
-      <select class="select-user" id="sel-usuario">
-        <option value="">— Seleccionar —</option>
-      </select>
+      <div style="font-size:12px;color:#64748B;font-family:var(--fm);margin-bottom:10px">Ingresá tu usuario</div>
+      <input type="text" class="select-user" id="input-usuario" placeholder="Ej: jcuasquer" autocomplete="off" onkeydown="if(event.key==='Enter')irAPIN()" style="text-align:center"/>
       <button class="btn-login" onclick="irAPIN()">Continuar</button>
     </div>
 
@@ -495,23 +493,23 @@ const WEBAPP_READ='https://script.google.com/macros/s/AKfycbz0Gk5cb85zo7qd6fi5f9
 
 // ── USUARIOS POR DEFECTO ──────────────────────────────────────
 const USUARIOS_DEFAULT=[
-  {id:'u1',nombre:'Administrador DINASED',grado:'',rol:'admin',pin:'1234',activo:true},
-  {id:'u2',nombre:'Jonathan Cuasquer',grado:'SBTE',rol:'asistente',pin:'5678',activo:true},
-  {id:'u3',nombre:'Mantilla Gallardo Luis Eduardo',grado:'CRNL',rol:'asistente',pin:'',activo:true},
-  {id:'u4',nombre:'Barrera Jaramillo Jairo Nicolay',grado:'TCNL',rol:'asistente',pin:'',activo:true},
-  {id:'u5',nombre:'Puebla Viteri Oscar Vladimir',grado:'MAYR',rol:'asistente',pin:'',activo:true},
-  {id:'u6',nombre:'Lopez Moya Ricardo Vladimir',grado:'MAYR',rol:'asistente',pin:'',activo:true},
-  {id:'u7',nombre:'Fonseca Rivera Rodrigo Andres',grado:'CPTN',rol:'asistente',pin:'',activo:true},
-  {id:'u8',nombre:'Manjarrez Guerrero Susana',grado:'TCNL',rol:'asistente',pin:'',activo:true},
-  {id:'u9',nombre:'Maruri Jativa Jorge Luis',grado:'MAYR',rol:'asistente',pin:'',activo:true},
-  {id:'u10',nombre:'Amores Reyes Cristhian Fernando',grado:'CPTN',rol:'asistente',pin:'',activo:true},
-  {id:'u11',nombre:'Vasquez Rivera Ana Licette',grado:'TNTE',rol:'asistente',pin:'',activo:true},
-  {id:'u12',nombre:'Recalde Buitron Betty Marisela',grado:'TNTE',rol:'asistente',pin:'',activo:true},
-  {id:'u13',nombre:'Coyago Coyago Mayra Alexandra',grado:'CPTN',rol:'asistente',pin:'',activo:true},
-  {id:'u14',nombre:'Tabango Ruiz Jorge Alfredo',grado:'CPTN',rol:'asistente',pin:'',activo:true},
-  {id:'u15',nombre:'Gagnay Munoz Diana Carolina',grado:'CPTN',rol:'asistente',pin:'',activo:true},
-  {id:'u16',nombre:'Norona Martinez Ana Aracely',grado:'CPTN',rol:'asistente',pin:'',activo:true},
-  {id:'u17',nombre:'Flores Silva Danny Fernando',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u1',usuario:'admin',nombre:'Administrador DINASED',grado:'',rol:'admin',pin:'1234',activo:true},
+  {id:'u2',usuario:'jcuasquer',nombre:'Jonathan Cuasquer',grado:'SBTE',rol:'asistente',pin:'5678',activo:true},
+  {id:'u3',usuario:'lmantilla',nombre:'Mantilla Gallardo Luis Eduardo',grado:'CRNL',rol:'asistente',pin:'',activo:true},
+  {id:'u4',usuario:'jbarrera',nombre:'Barrera Jaramillo Jairo Nicolay',grado:'TCNL',rol:'asistente',pin:'',activo:true},
+  {id:'u5',usuario:'opuebla',nombre:'Puebla Viteri Oscar Vladimir',grado:'MAYR',rol:'asistente',pin:'',activo:true},
+  {id:'u6',usuario:'rlopez',nombre:'Lopez Moya Ricardo Vladimir',grado:'MAYR',rol:'asistente',pin:'',activo:true},
+  {id:'u7',usuario:'rfonseca',nombre:'Fonseca Rivera Rodrigo Andres',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u8',usuario:'smanjarrez',nombre:'Manjarrez Guerrero Susana',grado:'TCNL',rol:'asistente',pin:'',activo:true},
+  {id:'u9',usuario:'jmaruri',nombre:'Maruri Jativa Jorge Luis',grado:'MAYR',rol:'asistente',pin:'',activo:true},
+  {id:'u10',usuario:'camores',nombre:'Amores Reyes Cristhian Fernando',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u11',usuario:'avasquez',nombre:'Vasquez Rivera Ana Licette',grado:'TNTE',rol:'asistente',pin:'',activo:true},
+  {id:'u12',usuario:'brecalde',nombre:'Recalde Buitron Betty Marisela',grado:'TNTE',rol:'asistente',pin:'',activo:true},
+  {id:'u13',usuario:'mcoyago',nombre:'Coyago Coyago Mayra Alexandra',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u14',usuario:'jtabango',nombre:'Tabango Ruiz Jorge Alfredo',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u15',usuario:'dgagnay',nombre:'Gagnay Munoz Diana Carolina',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u16',usuario:'anorona',nombre:'Norona Martinez Ana Aracely',grado:'CPTN',rol:'asistente',pin:'',activo:true},
+  {id:'u17',usuario:'dflores',nombre:'Flores Silva Danny Fernando',grado:'CPTN',rol:'asistente',pin:'',activo:true},
 ];
 
 // ── ESTADO ────────────────────────────────────────────────────
@@ -543,20 +541,27 @@ function guardarLocal(){
 
 // ── LOGIN ─────────────────────────────────────────────────────
 function initLogin(){
-  const sel=document.getElementById('sel-usuario');
-  sel.innerHTML='<option value="">— Seleccionar —</option>';
-  usuarios.filter(u=>u.activo&&u.nombre).forEach(u=>{
-    const op=document.createElement('option');
-    op.value=u.id;
-    op.textContent=(u.grado?u.grado+' ':'')+u.nombre;
-    sel.appendChild(op);
-  });
+  // Verificar si hay sesión guardada
+  try{
+    const sesionGuardada=JSON.parse(localStorage.getItem('din_sesion')||'null');
+    if(sesionGuardada){
+      const u=usuarios.find(x=>x.id===sesionGuardada.id && x.activo);
+      if(u){
+        usuarioActual=u;
+        entrarAlSistema();
+        return;
+      }
+    }
+  }catch(e){}
+  // Sin sesión — limpiar campo de usuario
+  const inp=document.getElementById('input-usuario');
+  if(inp) inp.value='';
 }
 
 function irAPIN(){
-  const id=document.getElementById('sel-usuario').value;
-  if(!id){ toast('Seleccioná tu nombre',false); return; }
-  const u=usuarios.find(u=>u.id===id);
+  const usuarioTexto=document.getElementById('input-usuario').value.trim().toLowerCase();
+  if(!usuarioTexto){ toast('Ingresá tu usuario',false); return; }
+  const u=usuarios.find(u=>u.activo && u.usuario && u.usuario.toLowerCase()===usuarioTexto);
   if(!u){ toast('Usuario no encontrado',false); return; }
   usuarioActual=u;
   pinActual='';
@@ -593,12 +598,13 @@ function actualizarPinDots(){
 function verificarPIN(){
   if(pinActual===usuarioActual.pin){
     document.getElementById('pin-error').textContent='';
+    // Guardar sesión persistente
+    localStorage.setItem('din_sesion', JSON.stringify({id: usuarioActual.id}));
     entrarAlSistema();
   } else {
     document.getElementById('pin-error').textContent='PIN incorrecto. Intentá de nuevo.';
     pinActual='';
     actualizarPinDots();
-    // Vibrar en móvil
     navigator.vibrate && navigator.vibrate([100,50,100]);
   }
 }
@@ -616,6 +622,7 @@ function entrarAlSistema(){
 
 function cerrarSesion(){
   if(!confirm('¿Cerrar sesión?')) return;
+  localStorage.removeItem('din_sesion');
   usuarioActual=null; pinActual='';
   document.getElementById('app').classList.remove('visible');
   document.getElementById('login-screen').style.display='flex';
@@ -1118,7 +1125,7 @@ function renderUsuarios(){
       <div class="usr-avatar ${esAdmin?'usr-av-admin':'usr-av-asist'}">${u.nombre?u.nombre.charAt(0).toUpperCase():'+'}</div>
       <div class="usr-info">
         <div class="usr-nom">${u.nombre?nom:'Espacio disponible'}</div>
-        <div class="usr-det">${u.rol==='admin'?'Administrador':'Asistente'} · PIN: ${u.pin?'••••':'sin PIN'}</div>
+        <div class="usr-det">@${u.usuario||'sin-usuario'} · ${u.rol==='admin'?'Administrador':'Asistente'} · PIN: ${u.pin?'••••':'sin PIN'}</div>
       </div>
       <div class="usr-actions">
         <span class="role-chip ${esAdmin?'role-admin':'role-asist'}">${esAdmin?'ADMIN':'ASIST'}</span>
@@ -1129,7 +1136,7 @@ function renderUsuarios(){
 }
 
 function abrirModalUsuario(idx=null){
-  const u=idx!==null?{...usuarios[idx]}:{id:'u'+Date.now(),nombre:'',grado:'',rol:'asistente',pin:'',activo:true};
+  const u=idx!==null?{...usuarios[idx]}:{id:'u'+Date.now(),usuario:'',nombre:'',grado:'',rol:'asistente',pin:'',activo:true};
   const esNuevo=idx===null;
   document.getElementById('modal-container').innerHTML=`
   <div class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
@@ -1149,6 +1156,9 @@ function abrirModalUsuario(idx=null){
         <div class="fr"><label>Rol</label><select id="u-rol"><option value="asistente" ${u.rol==='asistente'?'selected':''}>Asistente</option><option value="admin" ${u.rol==='admin'?'selected':''}>Administrador</option></select></div>
       </div>
       <div class="fr"><label>Nombre completo</label><input id="u-nombre" type="text" value="${u.nombre}" placeholder="Jonathan Cuasquer"/></div>
+      <div class="fr"><label>Usuario (login)</label><input id="u-usuario" type="text" value="${u.usuario||''}" placeholder="jcuasquer" style="text-transform:lowercase"/>
+        <div style="font-size:10px;color:#475569;font-family:var(--fm);margin-top:3px">Inicial del nombre + apellido, sin espacios</div>
+      </div>
       <div class="fr"><label>PIN (4 dígitos)</label><input id="u-pin" type="password" maxlength="4" value="${u.pin}" placeholder="••••" inputmode="numeric"/></div>
       <div class="fr"><label>Estado</label><select id="u-activo"><option value="true" ${u.activo?'selected':''}>Activo</option><option value="false" ${!u.activo?'selected':''}>Inactivo</option></select></div>
       <div class="m-btns">
@@ -1160,9 +1170,14 @@ function abrirModalUsuario(idx=null){
 }
 
 function guardarUsuario(idx,id){
-  const u={id,nombre:document.getElementById('u-nombre').value,grado:document.getElementById('u-grado').value,rol:document.getElementById('u-rol').value,pin:document.getElementById('u-pin').value,activo:document.getElementById('u-activo').value==='true'};
+  const usuarioLogin=document.getElementById('u-usuario').value.trim().toLowerCase();
+  const u={id,usuario:usuarioLogin,nombre:document.getElementById('u-nombre').value,grado:document.getElementById('u-grado').value,rol:document.getElementById('u-rol').value,pin:document.getElementById('u-pin').value,activo:document.getElementById('u-activo').value==='true'};
   if(!u.nombre){ alert('Ingresá el nombre'); return; }
+  if(!u.usuario){ alert('Ingresá el usuario de login'); return; }
   if(u.pin && u.pin.length!==4){ alert('El PIN debe tener 4 dígitos'); return; }
+  // Verificar que el usuario no esté duplicado
+  const duplicado=usuarios.find((x,i)=>x.usuario===u.usuario && i!==idx);
+  if(duplicado){ alert('Ese usuario ya existe, elegí otro'); return; }
   if(idx!==null) usuarios[idx]=u; else usuarios.push(u);
   guardarLocal(); cerrarModal(); renderUsuarios(); initLogin(); toast('✅ Usuario guardado');
 }
